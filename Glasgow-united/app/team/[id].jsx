@@ -22,7 +22,7 @@ function MemberDetailScreen() {
   const [saving, setSaving] = useState(false);
   const [projects, setProjects] = useState([]);
   const [tasks, setTasks] = useState([]);
-  const [deleted, setDeleted] = useState(false);
+  const [deleted, setDeleted] = useState(false); 
 
   const showMessage = useCallback((title, text) => {
     Alert.alert(title, text);
@@ -30,6 +30,12 @@ function MemberDetailScreen() {
 
   useEffect(() => {
     const fetchMemberData = async () => {
+      if (deleted) {
+        setLoading(false);
+        setMember(null); 
+        return; 
+      }
+
       if (!id) {
         console.warn("FRONTEND DEBUG - [MemberDetail] ID não encontrado na rota.");
         showMessage('Erro', 'ID do membro não fornecido.');
@@ -56,11 +62,11 @@ function MemberDetailScreen() {
         if (error.response && error.response.status === 404) {
           showMessage('Membro Não Encontrado', 'O membro que você tentou acessar não existe mais ou foi excluído.');
           router.replace('/tabs/team'); 
-          return;
+          return; 
         } else if (error.message === "Network Error" || error.code === "ERR_NETWORK") {
           showMessage('Erro de Conexão', 'Não foi possível conectar ao servidor. Verifique sua conexão e a URL do backend.');
           router.replace('/tabs/team'); 
-          return;
+          return; 
         }
 
         if (error.response) {
@@ -94,17 +100,17 @@ function MemberDetailScreen() {
       }
     };
 
-    if (deleted) return;
-
     fetchMemberData();
-    fetchAllRelatedData();
+    if (!deleted) {
+      fetchAllRelatedData();
+    }
   }, [id, teamMembers, showMessage, router, deleted]);
 
   const handleUpdate = async () => {
     setSaving(true);
     console.log("FRONTEND DEBUG - [MemberDetail] Tentando atualizar membro. Dados enviados:", member);
     try {
-      if (!member.name || !member.name || !member.email) {
+      if (!member.name || !member.role || !member.email) { 
         showMessage('Validação', 'Nome, função e email são obrigatórios.');
         setSaving(false);
         return;
@@ -134,14 +140,23 @@ function MemberDetailScreen() {
         {
           text: "Excluir",
           onPress: async () => {
+            console.log("FRONTEND DEBUG - [MemberDetail] Tentando excluir membro com ID:", id);
             try {
-              await teamMemberApi.delete(id);
-              deleteTeamMember(id);
-              setDeleted(true);
+              await teamMemberApi.delete(id); 
+              deleteTeamMember(id); 
               showMessage('Sucesso', 'Membro excluído com sucesso!');
-              router.replace('/tabs/team');
+              setDeleted(true); 
+              console.log("FRONTEND DEBUG - [MemberDetail] Membro excluído com sucesso, redirecionando...");
+              router.replace('/tabs/team'); 
             } catch (error) {
-              console.error('FRONTEND DEBUG - [MemberDetail] Erro ao excluir membro:', error);
+              console.error('FRONTEND DEBUG - [MemberDetail] Erro ao excluir membro (catch block):', error.message || error);
+              if (error.response) {
+                  console.error("FRONTEND DEBUG - [MemberDetail] Detalhes do erro de resposta da API na exclusão (status/data):", error.response.status, JSON.stringify(error.response.data, null, 2));
+              } else if (error.request) {
+                  console.error("FRONTEND DEBUG - [MemberDetail] Erro de requisição na exclusão (não houve resposta do servidor).", error.request);
+              } else {
+                  console.error("FRONTEND DEBUG - [MemberDetail] Erro de configuração Axios/JS na exclusão:", error.message);
+              }
               showMessage('Erro', `Não foi possível excluir: ${error.message || 'Erro desconhecido'}`);
             }
           },
@@ -168,8 +183,6 @@ function MemberDetailScreen() {
       </View>
     );
   }
-
-  if (deleted) return null;
 
   return (
     <View style={styles.screenContainer}>
