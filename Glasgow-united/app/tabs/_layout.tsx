@@ -2,6 +2,7 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { FontAwesome } from '@expo/vector-icons';
+import { View, StyleSheet } from 'react-native'; // Adicionado View e StyleSheet para evitar possíveis erros de resolução
 
 export default function TabLayout() {
   return (
@@ -23,7 +24,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="team" // <--- CORRIGIDO: Agora o nome da rota da aba é "team" (refere-se à pasta app/tabs/team/index.jsx)
+        name="team/index" // <--- CORREÇÃO CRÍTICA: O nome da rota da aba é "team/index" para corresponder ao arquivo app/tabs/team/index.jsx
         options={{
           title: 'Equipe',
           tabBarIcon: ({ color }) => <FontAwesome size={28} name="group" color={color} />,

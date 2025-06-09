@@ -23,11 +23,7 @@ function AboutScreen() {
         substituídas por integrações reais com um backend Spring Boot ou Node.js.
       </Text>
       <Text style={styles.footerText}>Desenvolvido para a disciplina de AOS.</Text>
-      <Button
-        title="Voltar para Home"
-        onPress={() => router.replace('/')} // Usa replace para voltar à Home (index) de forma limpa
-        style={styles.backButton}
-      />
+      
     </View>
   );
 }

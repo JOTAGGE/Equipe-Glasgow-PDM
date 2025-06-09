@@ -1,26 +1,25 @@
 // app/tabs/index.jsx
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router'; // Importar useRouter
+import { useRouter } from 'expo-router';
 import Button from '../../components/common/Button'; // Importar o componente Button
 
 function HomeScreen() {
-  const router = useRouter(); // Inicializar router
+  const router = useRouter();
 
   return (
     <View style={styles.screenContainer}>
       <Text style={styles.title}>Bem-vindo ao Aplicativo da Equipe!</Text>
       <Text style={styles.subtitle}>Gerencie e conheça nossa equipe, projetos e tarefas.</Text>
       
-      {/* Botões restaurados para navegação entre as abas/telas */}
       <Button
         title="Ver Equipe"
-        onPress={() => router.push('/tabs/team')} // <--- CORRIGIDO: Navega para a aba da equipe no caminho /tabs/team
+        onPress={() => router.push('/tabs/team/index')} // <--- CORREÇÃO: Navega para a aba da equipe no caminho /tabs/team/index
         style={styles.homeButton}
       />
       <Button
         title="Sobre o App"
-        onPress={() => router.push('/tabs/about')} // <--- CORRIGIDO: Navega para a aba "Sobre" no caminho /tabs/about
+        onPress={() => router.push('/tabs/about')} // <--- CORREÇÃO: Navega para a aba "Sobre" no caminho /tabs/about
         style={styles.homeButton}
       />
     </View>
@@ -34,7 +33,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f9fa',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 80, // Mantido para espaçamento geral
+    paddingTop: 80,
   },
   title: {
     fontSize: 28,
@@ -49,7 +48,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 30,
   },
-  homeButton: { // Novo estilo para os botões da Home
+  homeButton: {
     backgroundColor: '#007bff',
     marginTop: 15,
     width: '100%',

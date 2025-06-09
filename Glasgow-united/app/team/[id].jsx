@@ -2,8 +2,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert, TouchableOpacity } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import axios from 'axios';
-import { FontAwesome } from '@expo/vector-icons'; // Para ícones do botão de adicionar
+import { FontAwesome } from '@expo/vector-icons';
 
 import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
@@ -27,7 +26,6 @@ function TeamMemberDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [generatingDescription, setGeneratingDescription] = useState(false);
-  const [showAssignModal, setShowAssignModal] = useState(false); // Estado para controlar o modal de associação
 
   const isNewMember = id === 'new';
 
@@ -45,8 +43,10 @@ function TeamMemberDetailScreen() {
           setMember(fetchedMember);
           setIsEditing(false);
         } else {
-          showMessage('Erro', 'Membro da equipe não encontrado.');
-          router.replace('/team');
+          // Se o membro não for encontrado, exibe um erro e navega de volta para a lista da equipe
+          showMessage('Erro', 'Membro da equipe não encontrado. Redirecionando para a lista de equipe.');
+          router.replace('/tabs/team/index'); // <--- CORREÇÃO: Redireciona para a aba da equipe
+          return;
         }
       } else {
           setMember({ id: '', name: '', role: '', email: '', description: '', associatedProjects: [], associatedTasks: [] });
@@ -60,7 +60,7 @@ function TeamMemberDetailScreen() {
 
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
-      showMessage('Erro', 'Não foi possível carregar os dados.');
+      showMessage('Erro', 'Não foi possível carregar os dados. Verifique a API mockada.');
     } finally {
       setLoading(false);
     }
@@ -69,7 +69,6 @@ function TeamMemberDetailScreen() {
   useEffect(() => {
     fetchAllData();
   }, [fetchAllData]);
-
 
   const handleGenerateDescription = async () => {
     if (!member.role) {
@@ -83,26 +82,31 @@ function TeamMemberDetailScreen() {
       let chatHistory = [];
       chatHistory.push({ role: "user", parts: [{ text: prompt }] });
       const payload = { contents: chatHistory };
-      const apiKey = ""; // A chave da API é fornecida automaticamente no ambiente Canvas.
-const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${AIzaSyA-g3mc6Sx-ViqxV9JXdeEAnXIJkeFUFdY}`;
-      const response = await axios.post(apiUrl, payload, {
-          headers: { 'Content-Type': 'application/json' }
+      
+      const apiKey = ""; // O Canvas irá injetar sua chave de API automaticamente AQUI.
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+      
+      const response = await fetch(apiUrl, {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify(payload)
       });
-      const result = response.data;
+      const result = await response.json();
 
-      if (result.candidates && result.candidates.length > 0 &&
+      if (response.ok && result.candidates && result.candidates.length > 0 &&
           result.candidates[0].content && result.candidates[0].content.parts &&
           result.candidates[0].content.parts.length > 0) {
         const text = result.candidates[0].content.parts[0].text;
         setMember((prevMember) => ({ ...prevMember, description: text }));
         showMessage('Sucesso', 'Descrição gerada com sucesso!');
       } else {
-        console.error('Estrutura de resposta inesperada da API Gemini:', result);
-        showMessage('Erro', 'Não foi possível gerar a descrição. Tente novamente.');
+        console.error('Erro na resposta da API Gemini:', result);
+        const errorDetail = result.error?.message || 'Resposta inesperada ou incompleta da API Gemini.';
+        showMessage('Erro Gemini', `Não foi possível gerar a descrição: ${errorDetail}. Verifique as permissões da API no Google Cloud Console.`);
       }
     } catch (error) {
       console.error('Erro ao chamar a API Gemini:', error);
-      showMessage('Erro', `Falha ao gerar descrição: ${error.message || error.response?.data}`);
+      showMessage('Erro Gemini', `Falha ao gerar descrição: ${error.message || 'Erro de conexão ou servidor.'}`);
     } finally {
       setGeneratingDescription(false);
     }
@@ -154,7 +158,7 @@ const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2
               await teamMemberApi.delete(member.id);
               deleteTeamMember(member.id);
               showMessage('Sucesso', 'Membro da equipe excluído!');
-              router.replace('/team');
+              router.replace('/tabs/team/index'); // <--- CORREÇÃO: Volta para a aba da equipe após excluir
             } catch (error) {
               console.error('Erro ao excluir membro:', error);
               showMessage('Erro', `Não foi possível excluir: ${error.message || error.response?.data}`);
@@ -169,35 +173,8 @@ const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2
     );
   };
 
-  // Filtra projetos e tarefas associadas com base nos IDs que o membro possui
   const memberProjects = projects.filter(project => member.associatedProjects?.includes(project.id));
   const memberTasks = tasks.filter(task => member.associatedTasks?.includes(task.id));
-
-  // Função para lidar com a associação de um projeto/tarefa
-  const handleAssociate = useCallback(async (selectedItem, type) => {
-    setSaving(true);
-    try {
-      let updatedMember = { ...member };
-      if (type === 'project') {
-        updatedMember.associatedProjects = updatedMember.associatedProjects ? [...updatedMember.associatedProjects, selectedItem.id] : [selectedItem.id];
-      } else if (type === 'task') {
-        updatedMember.associatedTasks = updatedMember.associatedTasks ? [...updatedMember.associatedTasks, selectedItem.id] : [selectedItem.id];
-      }
-      
-      const response = await teamMemberApi.update(updatedMember);
-      const updated = response.data;
-      updateTeamMember(updated); // Atualiza o store global
-      setMember(updated); // Atualiza o estado local do membro
-      showMessage('Sucesso', `${selectedItem.name} ${type === 'project' ? 'associado' : 'associada'}!`);
-      setShowAssignModal(false); // Fecha o modal
-    } catch (error) {
-      console.error(`Erro ao associar ${type}:`, error);
-      showMessage('Erro', `Não foi possível associar: ${error.message || error.response?.data}`);
-    } finally {
-      setSaving(false);
-    }
-  }, [member, showMessage, updateTeamMember]);
-
 
   return (
     <View style={styles.screenContainer}>
@@ -290,7 +267,7 @@ const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2
             )}
           </View>
 
-          {!isNewMember && ( // Só mostra informações relacionadas se não for um novo membro
+          {!isNewMember && (
             <>
               <View style={styles.relatedInfoContainer}>
                 <Text style={styles.sectionTitle}>Projetos Associados:</Text>
@@ -332,7 +309,7 @@ const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2
           )}
         </ScrollView>
       )}
-      {saving && ( // Overlay de salvamento/geração
+      {saving && (
         <View style={styles.savingOverlay}>
           <ActivityIndicator size="large" color="#007bff" />
           <Text style={styles.loadingText}>Salvando...</Text>
@@ -461,7 +438,7 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   associateButton: {
-    backgroundColor: '#17a2b8', // Cor para o botão de associar
+    backgroundColor: '#17a2b8',
     marginTop: 20,
     width: '100%',
   },

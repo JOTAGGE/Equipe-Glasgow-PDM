@@ -23,14 +23,12 @@ function TeamMembersListScreen() {
       try {
         const response = await teamMemberApi.getAll();
         setTeamMembers(response.data);
-        // Não mostrar alerta se apenas não houver membros
         if (response.data.length === 0) {
             console.log("Nenhum membro da equipe encontrado na API mock.");
         }
       } catch (error) {
         console.error('Erro ao buscar membros da equipe:', error);
-        // Mostrar alerta SOMENTE em caso de erro na requisição
-        showMessage('Erro', 'Não foi possível carregar os membros da equipe. Verifique a API.');
+        showMessage('Erro na API', 'Não foi possível carregar os membros da equipe. Verifique a conexão ou as permissões da API.');
       } finally {
         setLoading(false);
       }
@@ -51,7 +49,6 @@ function TeamMembersListScreen() {
 
   return (
     <View style={styles.screenContainer}>
-      {/* O cabeçalho desta tela é gerenciado por app/tabs/_layout.tsx */}
       <Text style={styles.title}>Nossa Equipe</Text>
       {loading ? (
         <View style={styles.loadingContainer}>
@@ -87,7 +84,7 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#f8f9fa',
     alignItems: 'center',
-    paddingTop: 20, // Mantido para espaçamento geral
+    paddingTop: 20,
   },
   title: {
     fontSize: 28,

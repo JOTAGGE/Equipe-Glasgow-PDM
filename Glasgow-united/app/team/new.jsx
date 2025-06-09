@@ -2,9 +2,7 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import axios from 'axios';
 
-// Caminhos de importação para ../../ (subindo dois níveis da raiz do projeto)
 import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
 import useTeamStore from '../../store/teamStore';
@@ -34,27 +32,31 @@ function NewTeamMemberScreen() {
       let chatHistory = [];
       chatHistory.push({ role: "user", parts: [{ text: prompt }] });
       const payload = { contents: chatHistory };
-      const apiKey = ""; // A chave da API é fornecida automaticamente no ambiente Canvas.
-const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${AIzaSyA-g3mc6Sx-ViqxV9JXdeEAnXIJkeFUFdY}`;
-      const response = await axios.post(apiUrl, payload, {
-          headers: { 'Content-Type': 'application/json' }
+      
+      const apiKey = ""; // O Canvas irá injetar sua chave de API automaticamente AQUI.
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+      
+      const response = await fetch(apiUrl, {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify(payload)
       });
-      const result = response.data;
+      const result = await response.json();
 
-
-      if (result.candidates && result.candidates.length > 0 &&
+      if (response.ok && result.candidates && result.candidates.length > 0 &&
           result.candidates[0].content && result.candidates[0].content.parts &&
           result.candidates[0].content.parts.length > 0) {
         const text = result.candidates[0].content.parts[0].text;
         setMember((prevMember) => ({ ...prevMember, description: text }));
         showMessage('Sucesso', 'Descrição gerada com sucesso!');
       } else {
-        console.error('Estrutura de resposta inesperada da API Gemini:', result);
-        showMessage('Erro', 'Não foi possível gerar a descrição. Tente novamente.');
+        console.error('Erro na resposta da API Gemini:', result);
+        const errorDetail = result.error?.message || 'Resposta inesperada ou incompleta da API Gemini.';
+        showMessage('Erro Gemini', `Não foi possível gerar a descrição: ${errorDetail}. Verifique as permissões da API no Google Cloud Console.`);
       }
     } catch (error) {
       console.error('Erro ao chamar a API Gemini:', error);
-      showMessage('Erro', `Falha ao gerar descrição: ${error.message || error.response?.data}`);
+      showMessage('Erro Gemini', `Falha ao gerar descrição: ${error.message || 'Erro de conexão ou servidor.'}`);
     } finally {
       setGeneratingDescription(false);
     }
@@ -236,7 +238,5 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
 });
-
-
 
 export default NewTeamMemberScreen;
