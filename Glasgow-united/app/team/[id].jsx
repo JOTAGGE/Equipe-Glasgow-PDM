@@ -43,9 +43,8 @@ function TeamMemberDetailScreen() {
           setMember(fetchedMember);
           setIsEditing(false);
         } else {
-          // Se o membro não for encontrado, exibe um erro e navega de volta para a lista da equipe
           showMessage('Erro', 'Membro da equipe não encontrado. Redirecionando para a lista de equipe.');
-          router.replace('/tabs/team/index'); // <--- CORREÇÃO: Redireciona para a aba da equipe
+          router.replace('/tabs/team/index'); // Redireciona para a aba da equipe
           return;
         }
       } else {
@@ -83,7 +82,7 @@ function TeamMemberDetailScreen() {
       chatHistory.push({ role: "user", parts: [{ text: prompt }] });
       const payload = { contents: chatHistory };
       
-      const apiKey = ""; // O Canvas irá injetar sua chave de API automaticamente AQUI.
+      const apiKey = "AIzaSyA-g3mc6Sx-ViqxV9JXdeEAnXIJkeFUFdY";
       const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
       
       const response = await fetch(apiUrl, {
@@ -158,7 +157,7 @@ function TeamMemberDetailScreen() {
               await teamMemberApi.delete(member.id);
               deleteTeamMember(member.id);
               showMessage('Sucesso', 'Membro da equipe excluído!');
-              router.replace('/tabs/team/index'); // <--- CORREÇÃO: Volta para a aba da equipe após excluir
+              router.back('/tabs/team/index'); // Redireciona para a aba da equipe após excluir
             } catch (error) {
               console.error('Erro ao excluir membro:', error);
               showMessage('Erro', `Não foi possível excluir: ${error.message || error.response?.data}`);
@@ -195,11 +194,13 @@ function TeamMemberDetailScreen() {
             editable={isEditing}
           />
           <Input
-            label="Função"
-            value={member.role}
-            onChangeText={(text) => setMember({ ...member, role: text })}
-            placeholder="Desenvolvedor, Designer, etc."
-            editable={isEditing}
+            value={member.description}
+                onChangeText={(text) => setMember({ ...member, description: text })}
+                placeholder="Detalhes sobre as responsabilidades da função."
+                editable={isEditing}
+                keyboardType="default"
+                multiline={true} // Garante que o input possa ter múltiplas linhas
+                style={styles.multilineInputField} // Estilo para altura mínima
             rightAccessory={
               isEditing && (
                 <Button
@@ -212,14 +213,25 @@ function TeamMemberDetailScreen() {
               )
             }
           />
-          <Input
-            label="Descrição da Função"
-            value={member.description}
-            onChangeText={(text) => setMember({ ...member, description: text })}
-            placeholder="Detalhes sobre as responsabilidades da função."
-            editable={isEditing}
-            keyboardType="default"
-          />
+
+          {/* Exibe a descrição como Text ou Input dependendo do modo */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Descrição da Função</Text>
+            {isEditing ? (
+              <Input
+                value={member.description}
+                onChangeText={(text) => setMember({ ...member, description: text })}
+                placeholder="Detalhes sobre as responsabilidades da função."
+                editable={isEditing}
+                keyboardType="default"
+                multiline={true}
+                style={styles.multilineInputField}
+              />
+            ) : (
+              <Text style={styles.descriptionText}>{member.description || 'Nenhuma descrição fornecida.'}</Text>
+            )}
+          </View>
+
           <Input
             label="Email"
             value={member.email}
@@ -336,16 +348,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: 'center',
   },
-  inputGroup: {
-    marginBottom: 15,
-    width: '100%',
-  },
-  inputLabel: {
-    fontSize: 16,
-    color: '#343a40',
-    marginBottom: 5,
-    fontWeight: '500',
-  },
+  
   inputField: {
     backgroundColor: '#fff',
     borderColor: '#ced4da',
@@ -356,6 +359,42 @@ const styles = StyleSheet.create({
     color: '#495057',
     width: '100%',
   },
+  
+    inputGroup: { // Estilo adicionado para o agrupamento do label e input/text da descrição
+    marginBottom: 15,
+    width: '100%',
+  },
+  inputLabel: { // Estilo existente para o label do input
+    fontSize: 16,
+    color: '#343a40',
+    marginBottom: 5,
+    fontWeight: '500',
+  },
+  multilineInputField: { // Novo estilo para o input da descrição em modo de edição
+    backgroundColor: '#fff',
+    borderColor: '#ced4da',
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 10,
+    fontSize: 16,
+    color: '#495057',
+    width: '100%',
+    minHeight: 100, // Altura mínima para mostrar mais texto
+    textAlignVertical: 'top', // Alinha o texto no topo em inputs multiline
+  },
+  descriptionText: { // Novo estilo para a descrição em modo de visualização
+    backgroundColor: '#fff',
+    borderColor: '#ced4da',
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 10,
+    fontSize: 16,
+    color: '#495057',
+    width: '100%',
+    lineHeight: 22, // Espaçamento entre linhas para melhor leitura
+  },
+
+
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',

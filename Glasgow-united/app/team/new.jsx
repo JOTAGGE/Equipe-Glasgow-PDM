@@ -33,7 +33,7 @@ function NewTeamMemberScreen() {
       chatHistory.push({ role: "user", parts: [{ text: prompt }] });
       const payload = { contents: chatHistory };
       
-      const apiKey = ""; // O Canvas irá injetar sua chave de API automaticamente AQUI.
+      const apiKey = "AIzaSyA-g3mc6Sx-ViqxV9JXdeEAnXIJkeFUFdY"; // O Canvas irá injetar sua chave de API automaticamente AQUI.
       const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
       
       const response = await fetch(apiUrl, {
