@@ -11,8 +11,13 @@ export default function RootLayout() {
       <StatusBar style="auto" />
       <View style={{ flex: 1, paddingTop: insets.top }}>
         <Stack
-          screenOptions={{ headerShown: false }} 
-        >
+          screenOptions={{
+        headerStyle: {
+          backgroundColor: '#f8f9fa',
+        },
+        headerTintColor: '#343a40',
+      }}
+    >
           
           <Stack.Screen name="index" options={{ headerShown: false }} />
 

@@ -1,9 +1,9 @@
 {
   "expo": {
     "extra": {
-      "apiBaseUrl": "https://equipe-glasgow-pdm.onrender.com",
+      "apiBaseUrl": "https://equipe-glasgow-pdm.onrender.com/",
       "eas": {
-        "projectId": "0d40c54f-3445-48fd-8221-61762954d5f1"
+        "projectId": "09530ffb-82dc-48b8-a1ee-c1fa691859ce"
       }
     },
     "runtimeVersion": {
@@ -14,6 +14,9 @@
     },
     "android": {},
     "ios": {},
-    "owner": "jotagge"
+    "scheme": "your-app-scheme",
+    "web": {
+      "bundler": "metro"
+    }
   }
 }

@@ -16,10 +16,12 @@ export default function TabLayout() {
       initialRouteName="index" // Rota inicial DENTRO DAS ABAS é 'index' (app/tabs/index.jsx)
     >
       <Tabs.Screen
-        name="index" // Rota: app/tabs/index.jsx
+        name="team"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }: { color: string }) => <FontAwesome size={28} name="home" color={color} />,
+          title: 'Equipe',
+          tabBarIcon: ({ color }: { color: string }) => (
+            <FontAwesome size={28} name="group" color={color} />
+          ),
         }}
       />
       <Tabs.Screen
