@@ -1,15 +1,14 @@
 // app/team/assign.jsx
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Alert, Modal, ScrollView } from 'react-native'; // <--- ScrollView IMPORTADO AQUI
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Modal } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FontAwesome } from '@expo/vector-icons';
 
-// Caminhos de importação para ../../ (subindo dois níveis da raiz do projeto)
 import Button from '../../components/common/Button';
 import useProjectStore from '../../store/projectStore';
 import useTaskStore from '../../store/taskStore';
-import useTeamStore from '../../store/teamStore'; // Para atualizar o membro no store
+import useTeamStore from '../../store/teamStore';
 import { projectApi } from '../../services/projectApi';
 import { taskApi } from '../../services/taskApi';
 import { teamMemberApi } from '../../services/teamMemberApi';
@@ -25,7 +24,7 @@ function AssignProjectTaskModal() {
 
   const { projects, setProjects } = useProjectStore();
   const { tasks, setTasks } = useTaskStore();
-  const { updateTeamMember } = useTeamStore(); // Para atualizar o membro no store global
+  const { updateTeamMember } = useTeamStore();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -98,9 +97,9 @@ function AssignProjectTaskModal() {
 
       const response = await teamMemberApi.update(currentMember);
       const updated = response.data;
-      updateTeamMember(updated); // Atualiza o store global
+      updateTeamMember(updated);
       showMessage('Sucesso', 'Associações salvas com sucesso!');
-      router.back(); // Fecha o modal
+      router.back();
     } catch (error) {
       console.error('Erro ao salvar associações:', error);
       showMessage('Erro', `Não foi possível salvar associações: ${error.message || error.response?.data}`);
@@ -109,19 +108,23 @@ function AssignProjectTaskModal() {
     }
   };
 
-  const renderItem = ({ item, type, isSelected }) => (
-    <TouchableOpacity
-      style={[styles.itemContainer, isSelected && styles.selectedItem]}
-      onPress={() => toggleSelection(item, type)}
-    >
-      <Text style={styles.itemName}>{item.name}</Text>
-      <FontAwesome
-        name={isSelected ? 'check-circle' : 'circle-o'}
-        size={20}
-        color={isSelected ? '#28a745' : '#6c757d'}
-      />
-    </TouchableOpacity>
-  );
+  const renderItem = (item, type) => {
+    const isSelected = (type === 'project' ? selectedProjects : selectedTasks).has(item.id);
+    return (
+      <TouchableOpacity
+        key={item.id}
+        style={[styles.itemContainer, isSelected && styles.selectedItem]}
+        onPress={() => toggleSelection(item, type)}
+      >
+        <Text style={styles.itemName}>{item.name}</Text>
+        <FontAwesome
+          name={isSelected ? 'check-circle' : 'circle-o'}
+          size={20}
+          color={isSelected ? '#28a745' : '#6c757d'}
+        />
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View style={[styles.modalContainer, { paddingTop: insets.top + 20 }]}>
@@ -135,24 +138,24 @@ function AssignProjectTaskModal() {
           <Text style={styles.loadingText}>Carregando...</Text>
         </View>
       ) : (
-        <ScrollView style={styles.scrollView}>
+        <ScrollView style={styles.scrollViewContent}> 
           <Text style={styles.sectionHeading}>Projetos Disponíveis:</Text>
-          <FlatList
-            data={projects}
-            renderItem={({ item }) => renderItem({ item, type: 'project', isSelected: selectedProjects.has(item.id) })}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.listContent}
-            ListEmptyComponent={<Text style={styles.emptyMessage}>Nenhum projeto disponível.</Text>}
-          />
+          {projects.length === 0 ? (
+            <Text style={styles.emptyMessage}>Nenhum projeto disponível.</Text>
+          ) : (
+            <View>
+              {projects.map(project => renderItem(project, 'project'))}
+            </View>
+          )}
 
           <Text style={styles.sectionHeading}>Tarefas Disponíveis:</Text>
-          <FlatList
-            data={tasks}
-            renderItem={({ item }) => renderItem({ item, type: 'task', isSelected: selectedTasks.has(item.id) })}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.listContent}
-            ListEmptyComponent={<Text style={styles.emptyMessage}>Nenhuma tarefa disponível.</Text>}
-          />
+          {tasks.length === 0 ? (
+            <Text style={styles.emptyMessage}>Nenhuma tarefa disponível.</Text>
+          ) : (
+            <View>
+              {tasks.map(task => renderItem(task, 'task'))}
+            </View>
+          )}
         </ScrollView>
       )}
 
@@ -191,11 +194,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     paddingHorizontal: 20,
   },
-  closeButton: {
-    position: 'absolute',
-    left: 20,
-    padding: 5,
-  },
   modalTitle: {
     fontSize: 22,
     fontWeight: 'bold',
@@ -203,7 +201,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     flex: 1,
   },
-  scrollView: {
+  scrollViewContent: {
     flex: 1,
     paddingHorizontal: 20,
   },
@@ -232,9 +230,6 @@ const styles = StyleSheet.create({
   itemName: {
     fontSize: 16,
     color: '#343a40',
-  },
-  listContent: {
-    paddingBottom: 20,
   },
   emptyMessage: {
     fontSize: 16,
