@@ -1,332 +1,280 @@
 // app/team/[id].jsx
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert, TouchableOpacity } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { FontAwesome } from '@expo/vector-icons';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
+import Input from '../../components/common/Input';
 import useTeamStore from '../../store/teamStore';
-import useProjectStore from '../../store/projectStore';
-import useTaskStore from '../../store/taskStore';
 import { teamMemberApi } from '../../services/teamMemberApi';
-import { projectApi } from '../../services/projectApi';
-import { taskApi } from '../../services/taskApi';
+import { projectApi } from '../../services/projectApi'; 
+import { taskApi } from '../../services/taskApi';     
 
-function TeamMemberDetailScreen() {
+function MemberDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
+  const { teamMembers, updateTeamMember, deleteTeamMember } = useTeamStore();
+  const insets = useSafeAreaInsets(); // Obtém os insets da área segura para ajustar o layout
 
-  const { teamMembers, addTeamMember, updateTeamMember, deleteTeamMember } = useTeamStore();
-  const { projects, setProjects } = useProjectStore();
-  const { tasks, setTasks } = useTaskStore();
-
-  const [member, setMember] = useState({ id: '', name: '', role: '', email: '', description: '', associatedProjects: [], associatedTasks: [] });
-  const [isEditing, setIsEditing] = useState(false);
+  const [member, setMember] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [generatingDescription, setGeneratingDescription] = useState(false);
+  const [projects, setProjects] = useState([]); // Estado para armazenar todos os projetos
+  const [tasks, setTasks] = useState([]);     // Estado para armazenar todas as tarefas
+  const [deleted, setDeleted] = useState(false);
 
-  const isNewMember = id === 'new';
-
+  // Callback para exibir mensagens de alerta ao usuário
   const showMessage = useCallback((title, text) => {
     Alert.alert(title, text);
   }, []);
 
-  const fetchAllData = useCallback(async () => {
-    setLoading(true);
-    try {
-      if (!isNewMember) {
-        const response = await teamMemberApi.getById(id);
-        const fetchedMember = response.data;
-        if (fetchedMember) {
-          setMember(fetchedMember);
-          setIsEditing(false);
-        } else {
-          showMessage('Erro', 'Membro da equipe não encontrado. Redirecionando para a lista de equipe.');
-          router.replace('/tabs/team/index'); // Redireciona para a aba da equipe
-          return;
-        }
-      } else {
-          setMember({ id: '', name: '', role: '', email: '', description: '', associatedProjects: [], associatedTasks: [] });
-          setIsEditing(true);
-      }
-
-      const projectsResponse = await projectApi.getAll();
-      setProjects(projectsResponse.data);
-      const tasksResponse = await taskApi.getAll();
-      setTasks(tasksResponse.data);
-
-    } catch (error) {
-      console.error('Erro ao carregar dados:', error);
-      showMessage('Erro', 'Não foi possível carregar os dados. Verifique a API mockada.');
-    } finally {
-      setLoading(false);
-    }
-  }, [id, isNewMember, setProjects, setTasks, router, showMessage]);
-
+  // Efeito para buscar os detalhes do membro e dados relacionados (projetos/tarefas)
   useEffect(() => {
-    fetchAllData();
-  }, [fetchAllData]);
-
-  const handleGenerateDescription = async () => {
-    if (!member.role) {
-      showMessage('Atenção', 'Por favor, insira uma função antes de gerar uma descrição.');
-      return;
-    }
-    setGeneratingDescription(true);
-    try {
-      const prompt = `Gere uma descrição detalhada para a função de "${member.role}". A descrição deve ser concisa, focada nas responsabilidades principais e habilidades necessárias. Max 100 palavras.`;
-      
-      let chatHistory = [];
-      chatHistory.push({ role: "user", parts: [{ text: prompt }] });
-      const payload = { contents: chatHistory };
-      
-      const apiKey = "AIzaSyA-g3mc6Sx-ViqxV9JXdeEAnXIJkeFUFdY";
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-      
-      const response = await fetch(apiUrl, {
-         method: 'POST',
-         headers: { 'Content-Type': 'application/json' },
-         body: JSON.stringify(payload)
-      });
-      const result = await response.json();
-
-      if (response.ok && result.candidates && result.candidates.length > 0 &&
-          result.candidates[0].content && result.candidates[0].content.parts &&
-          result.candidates[0].content.parts.length > 0) {
-        const text = result.candidates[0].content.parts[0].text;
-        setMember((prevMember) => ({ ...prevMember, description: text }));
-        showMessage('Sucesso', 'Descrição gerada com sucesso!');
-      } else {
-        console.error('Erro na resposta da API Gemini:', result);
-        const errorDetail = result.error?.message || 'Resposta inesperada ou incompleta da API Gemini.';
-        showMessage('Erro Gemini', `Não foi possível gerar a descrição: ${errorDetail}. Verifique as permissões da API no Google Cloud Console.`);
+    const fetchMemberData = async () => {
+      if (!id) {
+        console.warn("FRONTEND DEBUG - [MemberDetail] ID não encontrado na rota.");
+        showMessage('Erro', 'ID do membro não fornecido.');
+        setLoading(false);
+        return;
       }
-    } catch (error) {
-      console.error('Erro ao chamar a API Gemini:', error);
-      showMessage('Erro Gemini', `Falha ao gerar descrição: ${error.message || 'Erro de conexão ou servidor.'}`);
-    } finally {
-      setGeneratingDescription(false);
-    }
-  };
 
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      if (isNewMember) {
-        if (!member.name || !member.role || !member.email) {
-            showMessage('Validação', 'Todos os campos são obrigatórios para um novo membro.');
-            setSaving(false);
-            return;
+      console.log("FRONTEND DEBUG - [MemberDetail] ID recebido na rota:", id);
+      setLoading(true); // Inicia o estado de carregamento
+      try {
+        // Tenta encontrar o membro no store global primeiro (mais rápido)
+        const foundMember = teamMembers.find(m => m.id === id); 
+        if (foundMember) {
+          setMember(foundMember);
+          console.log("FRONTEND DEBUG - [MemberDetail] Membro encontrado no store:", foundMember);
+        } else {
+          // Se não estiver no store, busca na API
+          console.log("FRONTEND DEBUG - [MemberDetail] Membro não encontrado no store, buscando na API com ID:", id);
+          const apiMember = await teamMemberApi.getById(id);
+          setMember(apiMember);
+          console.log("FRONTEND DEBUG - [MemberDetail] Dados do membro buscados da API:", apiMember);
         }
-        const response = await teamMemberApi.create(member);
-        const newMember = response.data;
-        addTeamMember(newMember);
-        showMessage('Sucesso', 'Membro da equipe adicionado!');
-        router.replace(`/team/${newMember.id}`);
-      } else {
-        const response = await teamMemberApi.update(member);
-        const updated = response.data;
-        updateTeamMember(updated);
-        showMessage('Sucesso', 'Membro da equipe atualizado!');
-        setIsEditing(false);
+      } catch (error) {
+        console.error('FRONTEND DEBUG - [MemberDetail] Erro ao buscar detalhes do membro (catch block):', error.message || error);
+        
+        // Trata erros de rede ou 404 (membro não encontrado/deletado) com redirecionamento imediato
+        if (error.response && error.response.status === 404) {
+          showMessage('Membro Não Encontrado', 'O membro que você tentou acessar não existe mais ou foi excluído.');
+          router.replace('/tabs/team'); // Redireciona para a lista de membros
+          return; // Importante para parar a execução após o redirecionamento
+        } else if (error.message === "Network Error" || error.code === "ERR_NETWORK") {
+          showMessage('Erro de Conexão', 'Não foi possível conectar ao servidor. Verifique sua conexão e a URL do backend.');
+          router.replace('/tabs/team'); // Redireciona para a lista de membros
+          return; // Importante para parar a execução após o redirecionamento
+        }
+
+        // Logs detalhados para outros tipos de erro, caso não sejam 404 ou Network Error
+        if (error.response) {
+            console.error("FRONTEND DEBUG - [MemberDetail] Detalhes do erro de resposta da API (status/data):", error.response.status, JSON.stringify(error.response.data, null, 2));
+        } else if (error.request) {
+            console.error("FRONTEND DEBUG - [MemberDetail] Erro de requisição (não houve resposta do servidor).", error.request);
+        } else {
+            console.error("FRONTEND DEBUG - [MemberDetail] Erro de configuração Axios/JS:", error.message);
+        }
+        
+        showMessage('Erro na API', `Não foi possível carregar os detalhes do membro: ${error.message || 'Erro desconhecido'}`);
+        setMember(null); // Limpa o membro em caso de erro grave
+      } finally {
+        setLoading(false); // Finaliza o estado de carregamento
       }
+    };
+
+    // Função para buscar todos os projetos e tarefas do backend para exibição dos nomes completos
+    const fetchAllRelatedData = async () => {
+      try {
+        console.log("FRONTEND DEBUG - [MemberDetail] Buscando todos os projetos e tarefas para display...");
+        const [allProjects, allTasks] = await Promise.all([
+          projectApi.getAll(),
+          taskApi.getAll()
+        ]);
+        setProjects(allProjects || []); // Garante que é um array, mesmo se a API retornar null/undefined
+        setTasks(allTasks || []);     // Garante que é um array
+      } catch (e) {
+        console.error("FRONTEND DEBUG - [MemberDetail] Erro ao buscar projetos/tarefas:", e.message);
+        setProjects([]); // Limpa as listas em caso de erro
+        setTasks([]);
+      }
+    };
+
+    if (deleted) return; // Não busca se já foi deletado
+
+    fetchMemberData();      // Chama a função principal para buscar os dados do membro
+    fetchAllRelatedData();  // Chama a função para buscar dados relacionados
+  }, [id, teamMembers, showMessage, router, deleted]); // Dependências do useEffect
+
+  // Lógica para atualizar os dados do membro no backend
+  const handleUpdate = async () => {
+    setSaving(true); // Ativa o estado de salvamento
+    console.log("FRONTEND DEBUG - [MemberDetail] Tentando atualizar membro. Dados enviados:", member);
+    try {
+      if (!member.name || !member.role || !member.email) {
+        showMessage('Validação', 'Nome, função e email são obrigatórios.');
+        setSaving(false);
+        return;
+      }
+      
+      const updated = await teamMemberApi.update(member); // Chama a API para atualizar
+      updateTeamMember(updated); // Atualiza o membro no store global do Zustand
+      showMessage('Sucesso', 'Membro atualizado com sucesso!');
+      setEditing(false); // Sai do modo de edição
     } catch (error) {
-      console.error('Erro ao salvar membro:', error);
-      showMessage('Erro', `Não foi possível salvar: ${error.message || error.response?.data}`);
+      console.error('FRONTEND DEBUG - [MemberDetail] Erro ao atualizar membro:', error);
+      showMessage('Erro', `Não foi possível atualizar: ${error.message || 'Erro desconhecido'}`);
     } finally {
-      setSaving(false);
+      setSaving(false); // Desativa o estado de salvamento
     }
   };
 
+  // Lógica para deletar um membro
   const handleDelete = async () => {
+    // Exibe um alerta de confirmação antes de prosseguir com a exclusão
     Alert.alert(
-      'Confirmar Exclusão',
-      `Tem certeza que deseja excluir ${member.name}?`,
+      "Confirmar Exclusão",
+      `Tem certeza que deseja excluir ${member?.name || 'este membro'}?`,
       [
         {
-          text: 'Cancelar',
-          style: 'cancel',
+          text: "Cancelar",
+          style: "cancel",
         },
         {
-          text: 'Excluir',
+          text: "Excluir",
           onPress: async () => {
-            setSaving(true);
             try {
-              await teamMemberApi.delete(member.id);
-              deleteTeamMember(member.id);
-              showMessage('Sucesso', 'Membro da equipe excluído!');
-              router.back('/tabs/team/index'); // Redireciona para a aba da equipe após excluir
+              await teamMemberApi.delete(id);
+              deleteTeamMember(id);
+              setDeleted(true); // <-- Marque como deletado
+              showMessage('Sucesso', 'Membro excluído com sucesso!');
+              router.replace('/tabs/team');
+              // Não faz mais nada após redirecionar
             } catch (error) {
-              console.error('Erro ao excluir membro:', error);
-              showMessage('Erro', `Não foi possível excluir: ${error.message || error.response?.data}`);
-            } finally {
-              setSaving(false);
+              console.error('FRONTEND DEBUG - [MemberDetail] Erro ao excluir membro:', error);
+              showMessage('Erro', `Não foi possível excluir: ${error.message || 'Erro desconhecido'}`);
             }
           },
-          style: 'destructive',
         },
       ],
       { cancelable: true }
     );
   };
 
-  const memberProjects = projects.filter(project => member.associatedProjects?.includes(project.id));
-  const memberTasks = tasks.filter(task => member.associatedTasks?.includes(task.id));
+  // Renderiza um indicador de carregamento enquanto os dados estão sendo buscados
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#007bff" />
+        <Text style={styles.loadingText}>Carregando detalhes do membro...</Text>
+      </View>
+    );
+  }
 
+  // Renderiza uma mensagem de erro se o membro não for encontrado após o carregamento
+  if (!member) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorMessage}>Membro não encontrado ou erro ao carregar.</Text>
+        <Button title="Voltar" onPress={() => router.back()} style={styles.backButton} />
+      </View>
+    );
+  }
+
+  // Se o membro foi deletado, não renderiza nada (pode redirecionar para outra tela no futuro)
+  if (deleted) return null;
+
+  // Renderiza a tela de detalhes/edição do membro
   return (
     <View style={styles.screenContainer}>
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007bff" />
-          <Text style={styles.loadingText}>Carregando...</Text>
+      {/* ScrollView para permitir rolagem do conteúdo. Padding inferior ajustado com insets para não cobrir a barra de navegação. */}
+      <ScrollView contentContainerStyle={[styles.scrollViewContent, { paddingBottom: insets.bottom + 80 }]}> 
+        <Text style={styles.title}>{editing ? 'Editar Membro' : 'Detalhes do Membro'}</Text>
+
+        <Input
+          label="Nome"
+          value={member.name ? String(member.name) : ''}
+          onChangeText={(text) => setMember({ ...member, name: text })}
+          editable={editing}
+          placeholder="Nome Completo"
+        />
+        <Input
+          label="Função"
+          value={member.role ? String(member.role) : ''}
+          onChangeText={(text) => setMember({ ...member, role: text })}
+          editable={editing}
+          placeholder="Desenvolvedor, Designer, etc."
+        />
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>Descrição</Text>
+          <Input
+            value={member.description ? String(member.description) : ''}
+            onChangeText={(text) => setMember({ ...member, description: text })}
+            editable={editing}
+            placeholder="Descrição detalhada"
+            multiline={true}
+            style={styles.multilineInputField}
+          />
         </View>
-      ) : (
-        <ScrollView contentContainerStyle={styles.scrollViewContent}>
-          <Text style={styles.title}>{isNewMember ? 'Adicionar Novo Membro' : 'Detalhes do Membro da Equipe'}</Text>
-
-          <Input
-            label="Nome"
-            value={member.name}
-            onChangeText={(text) => setMember({ ...member, name: text })}
-            placeholder="Nome Completo"
-            editable={isEditing}
-          />
-          <Input
-            value={member.description}
-                onChangeText={(text) => setMember({ ...member, description: text })}
-                placeholder="Detalhes sobre as responsabilidades da função."
-                editable={isEditing}
-                keyboardType="default"
-                multiline={true} // Garante que o input possa ter múltiplas linhas
-                style={styles.multilineInputField} // Estilo para altura mínima
-            rightAccessory={
-              isEditing && (
-                <Button
-                  title={generatingDescription ? 'Gerando...' : '✨ Gerar Descrição'}
-                  onPress={handleGenerateDescription}
-                  style={styles.generateDescriptionButton}
-                  disabled={generatingDescription}
-                  textStyle={styles.generateDescriptionButtonText}
-                />
-              )
-            }
-          />
-
-          {/* Exibe a descrição como Text ou Input dependendo do modo */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Descrição da Função</Text>
-            {isEditing ? (
-              <Input
-                value={member.description}
-                onChangeText={(text) => setMember({ ...member, description: text })}
-                placeholder="Detalhes sobre as responsabilidades da função."
-                editable={isEditing}
-                keyboardType="default"
-                multiline={true}
-                style={styles.multilineInputField}
-              />
-            ) : (
-              <Text style={styles.descriptionText}>{member.description || 'Nenhuma descrição fornecida.'}</Text>
-            )}
+        <Input
+          label="Email"
+          value={member.email ? String(member.email) : ''}
+          onChangeText={(text) => setMember({ ...member, email: text })}
+          editable={editing}
+          placeholder="email@example.com"
+          keyboardType="email-address"
+        />
+        
+        {/* Exibe os projetos associados, buscando o nome completo se disponível */}
+        {member.associatedProjects && member.associatedProjects.length > 0 && (
+          <View style={styles.associationsContainer}>
+            <Text style={styles.associationsTitle}>Projetos Associados:</Text>
+            {member.associatedProjects.map((projectId, index) => {
+              // Tenta encontrar o projeto completo pela ID
+              const project = projects.find(p => String(p.id) === String(projectId));
+              return (
+                <Text key={index} style={styles.associationItem}>
+                  - {project ? project.name : `ID: ${projectId}`} {/* Exibe o nome ou o ID */}
+                </Text>
+              );
+            })}
           </View>
-
-          <Input
-            label="Email"
-            value={member.email}
-            onChangeText={(text) => setMember({ ...member, email: text })}
-            placeholder="email@example.com"
-            keyboardType="email-address"
-            editable={isEditing}
-          />
-
-          <View style={styles.buttonContainer}>
-            {isEditing ? (
-              <>
-                <Button
-                  title="Salvar"
-                  onPress={handleSave}
-                  style={styles.actionButton}
-                  disabled={saving}
-                />
-                {!isNewMember && (
-                  <Button
-                    title="Cancelar"
-                    onPress={() => {
-                      const originalMember = teamMembers.find(m => m.id === id);
-                      setMember(originalMember || { id: '', name: '', role: '', email: '', description: '' });
-                      setIsEditing(false);
-                    }}
-                    style={styles.cancelButton}
-                    disabled={saving}
-                  />
-                )}
-              </>
-            ) : (
-              <>
-                <Button
-                  title="Editar"
-                  onPress={() => setIsEditing(true)}
-                  style={styles.actionButton}
-                />
-                <Button
-                  title="Excluir"
-                  onPress={handleDelete}
-                  style={styles.deleteButton}
-                />
-              </>
-            )}
+        )}
+        
+        {/* Exibe as tarefas associadas, buscando o nome completo se disponível */}
+        {member.associatedTasks && member.associatedTasks.length > 0 && (
+          <View style={styles.associationsContainer}>
+            <Text style={styles.associationsTitle}>Tarefas Associadas:</Text>
+            {member.associatedTasks.map((taskId, index) => {
+              // Tenta encontrar a tarefa completa pela ID
+              const task = tasks.find(t => String(t.id) === String(taskId));
+              return (
+                <Text key={index} style={styles.associationItem}>
+                  - {task ? task.name : `ID: ${taskId}`} {/* Exibe o nome ou o ID */}
+                </Text>
+              );
+            })}
           </View>
+        )}
 
-          {!isNewMember && (
+        {/* Contêiner para os botões de ação (Salvar, Cancelar, Editar, Excluir, Voltar) */}
+        <View style={styles.buttonContainer}>
+          {editing ? ( // Botões exibidos no modo de edição
             <>
-              <View style={styles.relatedInfoContainer}>
-                <Text style={styles.sectionTitle}>Projetos Associados:</Text>
-                {memberProjects.length === 0 ? (
-                  <Text style={styles.emptyMessage}>Nenhum projeto associado.</Text>
-                ) : (
-                  memberProjects.map(project => (
-                    <View key={project.id} style={styles.relatedItem}>
-                      <Text style={styles.relatedItemTitle}>{project.name}</Text>
-                      <Text style={styles.relatedItemDescription}>{project.description}</Text>
-                    </View>
-                  ))
-                )}
-              </View>
-
-              <View style={styles.relatedInfoContainer}>
-                <Text style={styles.sectionTitle}>Tarefas Associadas:</Text>
-                {memberTasks.length === 0 ? (
-                  <Text style={styles.emptyMessage}>Nenhuma tarefa associada.</Text>
-                ) : (
-                  memberTasks.map(task => (
-                    <View key={task.id} style={styles.relatedItem}>
-                      <Text style={styles.relatedItemTitle}>{task.name}</Text>
-                      <Text style={styles.relatedItemDescription}>{task.description}</Text>
-                    </View>
-                  ))
-                )}
-              </View>
-
-              <Button
-                title="Associar Projeto/Tarefa"
-                onPress={() => router.push({
-                  pathname: '/team/assign',
-                  params: { memberId: member.id, memberProjects: JSON.stringify(member.associatedProjects || []), memberTasks: JSON.stringify(member.associatedTasks || []) }
-                })}
-                style={styles.associateButton}
-              />
+              <Button title="Salvar Alterações" onPress={handleUpdate} style={styles.actionButton} disabled={saving} />
+              <Button title="Cancelar Edição" onPress={() => setEditing(false)} style={styles.cancelButton} disabled={saving} />
+            </>
+          ) : ( // Botões exibidos no modo de visualização
+            <>
+              <Button title="Editar Membro" onPress={() => setEditing(true)} style={styles.actionButton} />
+              <Button title="Excluir Membro" onPress={handleDelete} style={styles.deleteButton} />
+              <Button title="Voltar" onPress={() => router.back()} style={styles.backButton} />
             </>
           )}
-        </ScrollView>
-      )}
-      {saving && (
-        <View style={styles.savingOverlay}>
-          <ActivityIndicator size="large" color="#007bff" />
-          <Text style={styles.loadingText}>Salvando...</Text>
         </View>
-      )}
+      </ScrollView>
     </View>
   );
 }
@@ -339,7 +287,7 @@ const styles = StyleSheet.create({
   },
   scrollViewContent: {
     alignItems: 'center',
-    paddingBottom: 20,
+    // O paddingBottom dinâmico é aplicado diretamente no componente ScrollView, não aqui.
   },
   title: {
     fontSize: 28,
@@ -348,29 +296,17 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: 'center',
   },
-  
-  inputField: {
-    backgroundColor: '#fff',
-    borderColor: '#ced4da',
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 10,
-    fontSize: 16,
-    color: '#495057',
-    width: '100%',
-  },
-  
-    inputGroup: { // Estilo adicionado para o agrupamento do label e input/text da descrição
+  inputGroup: {
     marginBottom: 15,
     width: '100%',
   },
-  inputLabel: { // Estilo existente para o label do input
+  inputLabel: {
     fontSize: 16,
     color: '#343a40',
     marginBottom: 5,
     fontWeight: '500',
   },
-  multilineInputField: { // Novo estilo para o input da descrição em modo de edição
+  multilineInputField: {
     backgroundColor: '#fff',
     borderColor: '#ced4da',
     borderWidth: 1,
@@ -379,119 +315,84 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#495057',
     width: '100%',
-    minHeight: 100, // Altura mínima para mostrar mais texto
-    textAlignVertical: 'top', // Alinha o texto no topo em inputs multiline
+    minHeight: 100,
+    textAlignVertical: 'top',
   },
-  descriptionText: { // Novo estilo para a descrição em modo de visualização
-    backgroundColor: '#fff',
-    borderColor: '#ced4da',
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 10,
-    fontSize: 16,
-    color: '#495057',
+  associationsContainer: {
     width: '100%',
-    lineHeight: 22, // Espaçamento entre linhas para melhor leitura
+    marginTop: 15,
+    padding: 15,
+    backgroundColor: '#e9f7ef',
+    borderRadius: 10,
+    borderLeftWidth: 5,
+    borderLeftColor: '#28a745',
   },
-
-
+  associationsTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#28a745',
+    marginBottom: 10,
+  },
+  associationItem: {
+    fontSize: 16,
+    color: '#343a40',
+    marginBottom: 5,
+  },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     marginTop: 20,
-    marginBottom: 30,
+    marginBottom: 30, // Espaçamento extra abaixo dos botões dentro da ScrollView
     width: '100%',
-    gap: 10,
+    gap: 10, // Espaçamento entre os botões
+    flexWrap: 'wrap', // Permite que os botões quebrem a linha em telas menores
   },
   actionButton: {
     backgroundColor: '#007bff',
-    flex: 1,
-    marginHorizontal: 5,
+    flex: 1, // Permite que o botão ocupe o espaço disponível
+    minWidth: '45%', // Garante um tamanho mínimo para o botão
   },
   cancelButton: {
     backgroundColor: '#6c757d',
     flex: 1,
-    marginHorizontal: 5,
+    minWidth: '45%',
   },
   deleteButton: {
     backgroundColor: '#dc3545',
     flex: 1,
-    marginHorizontal: 5,
+    minWidth: '45%',
+    marginTop: 10, // Adiciona espaçamento superior para botões na nova linha
+  },
+  backButton: {
+    backgroundColor: '#17a2b8',
+    flex: 1,
+    minWidth: '45%',
+    marginTop: 10,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#f8f9fa',
   },
   loadingText: {
     marginTop: 10,
     fontSize: 16,
     color: '#6c757d',
   },
-  relatedInfoContainer: {
-    marginTop: 20,
-    paddingTop: 15,
-    borderTopWidth: 1,
-    borderTopColor: '#e9ecef',
-    width: '100%',
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#343a40',
-    marginBottom: 15,
-  },
-  relatedItem: {
-    backgroundColor: '#e9ecef',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 8,
-    width: '100%',
-  },
-  relatedItemTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#343a40',
-  },
-  relatedItemDescription: {
-    fontSize: 14,
-    color: '#6c757d',
-  },
-  emptyMessage: {
-    fontSize: 16,
-    color: '#6c757d',
-    textAlign: 'center',
-    marginTop: 20,
-  },
-  generateDescriptionButton: {
-    backgroundColor: '#6a0dad',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 6,
-    marginLeft: 10,
-    flexGrow: 0,
-    alignSelf: 'flex-start',
-  },
-  generateDescriptionButtonText: {
-    fontSize: 14,
-    color: '#fff',
-  },
-  associateButton: {
-    backgroundColor: '#17a2b8',
-    marginTop: 20,
-    width: '100%',
-  },
-  savingOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(255,255,255,0.8)',
+  errorContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 999,
+    backgroundColor: '#f8f9fa',
+    padding: 20,
+  },
+  errorMessage: {
+    fontSize: 18,
+    color: '#dc3545',
+    textAlign: 'center',
+    marginBottom: 20,
   },
 });
 
-export default TeamMemberDetailScreen;
+export default MemberDetailScreen;

@@ -13,6 +13,7 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+    
     "ios": {
       "supportsTablet": true
     },
@@ -34,5 +35,11 @@
     "experiments": {
       "typedRoutes": true
     }
+  },
+  "expo": {
+    "extra": {
+      "apiBaseUrl": "https://crispy-pancake-rqr64x56wwjhp5w-3000.app.github.dev/"
+    }
   }
 }
+

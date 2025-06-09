@@ -12,16 +12,7 @@ function HomeScreen() {
       <Text style={styles.title}>Bem-vindo ao Aplicativo da Equipe!</Text>
       <Text style={styles.subtitle}>Gerencie e conheça nossa equipe, projetos e tarefas.</Text>
       
-      <Button
-        title="Ver Equipe"
-        onPress={() => router.push('/tabs/team/index')} // <--- CORREÇÃO: Navega para a aba da equipe no caminho /tabs/team/index
-        style={styles.homeButton}
-      />
-      <Button
-        title="Sobre o App"
-        onPress={() => router.push('/tabs/about')} // <--- CORREÇÃO: Navega para a aba "Sobre" no caminho /tabs/about
-        style={styles.homeButton}
-      />
+
     </View>
   );
 }

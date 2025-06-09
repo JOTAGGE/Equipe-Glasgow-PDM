@@ -1,20 +1,40 @@
 // services/taskApi.js
 import axios from 'axios';
+import Constants from 'expo-constants';
 
-const mockTasks = [
-  { id: 't1', name: 'Configurar Expo Router', description: 'Configurar o roteamento inicial do aplicativo.', projectId: 'p1' },
-  { id: 't2', name: 'Desenvolver Componente de Input', description: 'Criar um componente reutilizável para inputs.', projectId: 'p1' },
-  { id: 't3', name: 'Criar protótipos de baixa fidelidade', description: 'Esboçar telas para o redesign.', projectId: 'p2' },
-];
+const API_BASE_URL = Constants.manifest?.extra?.apiBaseUrl || 'https://crispy-pancake-rqr64x56wwjhp5w-3000.app.github.dev/';
 
-const taskApi = {
+console.log("FRONTEND DEBUG - [taskApi] Módulo carregado. API_BASE_URL configurada:", API_BASE_URL);
+
+const taskApiInstance = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+export const taskApi = {
   getAll: async () => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({ data: mockTasks });
-      }, 350);
-    });
+    try {
+      console.log("FRONTEND DEBUG - [taskApi] Chamando GET para /tasks. Axios BaseURL:", taskApiInstance.defaults.baseURL);
+      const response = await taskApiInstance.get('/tasks'); 
+      console.log("FRONTEND DEBUG - [taskApi] Resposta de getAll() - Status:", response.status, "Dados recebidos:", response.data);
+      return response.data; 
+    } catch (error) {
+      console.error("FRONTEND DEBUG - [taskApi] Erro em getAll:", error.message, "Status do erro (se houver):", error.response?.status, "Dados do erro (se houver):", error.response?.data, "Objeto de requisição:", error.request);
+      throw error;
+    }
+  },
+  getById: async (id) => {
+    try {
+      console.log(`FRONTEND DEBUG - [taskApi] Chamando GET para /tasks/${id}. Axios BaseURL:`, taskApiInstance.defaults.baseURL);
+      const response = await taskApiInstance.get(`/tasks/${id}`); 
+      console.log(`FRONTEND DEBUG - [taskApi] Resposta de getById(${id}) - Status:`, response.status, "Dados recebidos:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error(`FRONTEND DEBUG - [taskApi] Erro em getById(${id}):`, error.message, "Status do erro (se houver):", error.response?.status, "Dados do erro (se houver):", error.response?.data, "Objeto de requisição:", error.request);
+      throw error;
+    }
   },
 };
-
-export { taskApi };
+ 

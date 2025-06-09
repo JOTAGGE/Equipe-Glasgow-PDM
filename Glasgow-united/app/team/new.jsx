@@ -3,7 +3,7 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 
-import Input from '../../components/common/Input';
+import Input from '../../components/common/Input'; // Garante que o Input corrigido seja usado
 import Button from '../../components/common/Button';
 import useTeamStore from '../../store/teamStore';
 import { teamMemberApi } from '../../services/teamMemberApi';
@@ -33,7 +33,7 @@ function NewTeamMemberScreen() {
       chatHistory.push({ role: "user", parts: [{ text: prompt }] });
       const payload = { contents: chatHistory };
       
-      const apiKey = "AIzaSyA-g3mc6Sx-ViqxV9JXdeEAnXIJkeFUFdY"; // O Canvas irá injetar sua chave de API automaticamente AQUI.
+      const apiKey = "AIzaSyA-g3mc6Sx-ViqxV9JXdeEAnXIJkeFUFdY"; 
       const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
       
       const response = await fetch(apiUrl, {
@@ -64,21 +64,47 @@ function NewTeamMemberScreen() {
 
   const handleSave = async () => {
     setSaving(true);
+    console.log("FRONTEND DEBUG - [NewMember] 1. Tentando salvar novo membro. Dados enviados:", JSON.stringify(member, null, 2)); 
     try {
       if (!member.name || !member.role || !member.email) {
-          showMessage('Validação', 'Todos os campos são obrigatórios para um novo membro.');
+          showMessage('Validação', 'Nome, função e email são obrigatórios.');
           setSaving(false);
           return;
       }
-      const response = await teamMemberApi.create(member);
-      const newMember = response.data;
-      addTeamMember(newMember);
+      
+      const createdMember = await teamMemberApi.create(member); 
+      console.log("FRONTEND DEBUG - [NewMember] 2. Resposta COMPLETA da API ao criar membro (createdMember):", JSON.stringify(createdMember, null, 2)); 
+      
+      if (!createdMember || typeof createdMember !== 'object' || createdMember.id === undefined || createdMember.id === null) {
+          console.error("FRONTEND DEBUG - [NewMember] 3. Erro: API retornou objeto sem ID ou inválido. Objeto retornado:", JSON.stringify(createdMember, null, 2));
+          showMessage('Erro', 'O servidor não retornou um ID válido para o novo membro. Verifique os consoles do backend e frontend.');
+          setSaving(false);
+          return;
+      }
+
+      addTeamMember(createdMember); 
+      console.log("FRONTEND DEBUG - [NewMember] 4. Membro adicionado ao store. ID do novo membro:", createdMember.id);
+      
       showMessage('Sucesso', 'Membro da equipe adicionado!');
-      router.replace(`/team/${newMember.id}`);
+      
+      setTimeout(() => {
+        router.replace(`/team/${createdMember.id}`); 
+        console.log("FRONTEND DEBUG - [NewMember] 5. Navegando para:", `/team/${createdMember.id}`);
+      }, 100); 
+      
     } catch (error) {
-      console.error('Erro ao salvar membro:', error);
-      showMessage('Erro', `Não foi possível salvar: ${error.message || error.response?.data}`);
+      console.error('FRONTEND DEBUG - [NewMember] 6. Erro ao salvar membro (catch block):', error.message || error); 
+      if (error.response) {
+          console.error("FRONTEND DEBUG - [NewMember] 6a. Detalhes do erro de resposta da API (status/data):", error.response.status, JSON.stringify(error.response.data, null, 2));
+      } else if (error.request) {
+          console.error("FRONTEND DEBUG - [NewMember] 6b. Erro de requisição (não houve resposta do servidor):", error.request);
+      } else {
+          console.error("FRONTEND DEBUG - [NewMember] 6c. Erro de configuração Axios/JS:", error.message);
+      }
+      const errorMessage = error.response?.data?.message || error.message || 'Erro desconhecido ao salvar.';
+      showMessage('Erro', `Não foi possível salvar: ${errorMessage}. Verifique os consoles do backend e frontend para mais detalhes.`);
     } finally {
+      console.log("FRONTEND DEBUG - [NewMember] 7. Finalizando operação de salvar.");
       setSaving(false);
     }
   };
@@ -111,14 +137,19 @@ function NewTeamMemberScreen() {
             />
           }
         />
-        <Input
-          label="Descrição da Função"
-          value={member.description}
-          onChangeText={(text) => setMember({ ...member, description: text })}
-          placeholder="Detalhes sobre as responsabilidades da função."
-          editable={true}
-          keyboardType="default"
-        />
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>Descrição da Função</Text>
+          <Input
+            value={member.description}
+            onChangeText={(text) => setMember({ ...member, description: text })}
+            placeholder="Detalhes sobre as responsabilidades da função."
+            editable={true} 
+            keyboardType="default"
+            multiline={true} 
+            style={styles.multilineInputField} 
+          />
+        </View>
+
         <Input
           label="Email"
           value={member.email}
@@ -180,7 +211,7 @@ const styles = StyleSheet.create({
     marginBottom: 5,
     fontWeight: '500',
   },
-  inputField: {
+  inputField: { // Estilo básico para campos de entrada de texto
     backgroundColor: '#fff',
     borderColor: '#ced4da',
     borderWidth: 1,
@@ -189,6 +220,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#495057',
     width: '100%',
+  },
+  multilineInputField: { 
+    minHeight: 100, 
+    textAlignVertical: 'top', 
+  },
+  descriptionText: { 
+    backgroundColor: '#fff',
+    borderColor: '#ced4da',
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 10,
+    fontSize: 16,
+    color: '#495057',
+    width: '100%',
+    lineHeight: 22, 
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -229,9 +275,9 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 6,
-    marginLeft: 10,
-    flexGrow: 0,
-    alignSelf: 'flex-start',
+    marginLeft: 10, // Espaçamento à esquerda para separá-lo do input
+    flexGrow: 0, // Não deve crescer para ocupar espaço
+    alignSelf: 'center', // Alinha ao centro verticalmente dentro do Input
   },
   generateDescriptionButtonText: {
     fontSize: 14,

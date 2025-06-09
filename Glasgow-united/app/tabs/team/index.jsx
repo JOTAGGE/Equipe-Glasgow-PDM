@@ -2,11 +2,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-
-// Caminhos de importação para ../../../ (subindo três níveis da raiz do projeto)
-import Button from '../../../components/common/Button';
-import useTeamStore from '../../../store/teamStore';
 import { teamMemberApi } from '../../../services/teamMemberApi';
+import useTeamStore from '../../../store/teamStore';
 
 function TeamMembersListScreen() {
   const router = useRouter();
@@ -21,26 +18,37 @@ function TeamMembersListScreen() {
     const fetchTeamMembers = async () => {
       setLoading(true);
       try {
-        const response = await teamMemberApi.getAll();
-        setTeamMembers(response.data);
-        if (response.data.length === 0) {
-            console.log("Nenhum membro da equipe encontrado na API mock.");
+        const membersData = await teamMemberApi.getAll();
+        let membersToSet = [];
+        if (Array.isArray(membersData)) {
+          membersToSet = membersData;
+        } else if (
+          membersData &&
+          typeof membersData === 'object' &&
+          Array.isArray(membersData.members)
+        ) {
+          membersToSet = membersData.members;
+        } else {
+          console.warn(
+            "FRONTEND DEBUG - [TeamList] Resposta da API teamMemberApi.getAll() não é um array ou é inválida. Conteúdo recebido:",
+            membersData
+          );
+          membersToSet = [];
         }
+        setTeamMembers(membersToSet);
       } catch (error) {
-        console.error('Erro ao buscar membros da equipe:', error);
-        showMessage('Erro na API', 'Não foi possível carregar os membros da equipe. Verifique a conexão ou as permissões da API.');
+        setTeamMembers([]);
       } finally {
         setLoading(false);
       }
     };
-
     fetchTeamMembers();
-  }, [setTeamMembers, showMessage]);
+  }, [setTeamMembers]);
 
   const renderItem = ({ item: member }) => (
     <TouchableOpacity
       style={styles.teamMemberItem}
-      onPress={() => router.push(`/team/${member.id}`)} // Navega para a tela de detalhes (fora das abas)
+      onPress={() => router.push(`/team/${member.id}`)}
     >
       <Text style={styles.memberItemName}>{member.name}</Text>
       <Text style={styles.memberItemRole}>{member.role}</Text>
@@ -49,31 +57,47 @@ function TeamMembersListScreen() {
 
   return (
     <View style={styles.screenContainer}>
-      <Text style={styles.title}>Nossa Equipe</Text>
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007bff" />
-          <Text style={styles.loadingText}>Carregando...</Text>
-        </View>
-      ) : (
-        <View style={styles.listContainer}>
-          {teamMembers.length === 0 ? (
-            <Text style={styles.emptyMessage}>Nenhum membro da equipe encontrado.</Text>
-          ) : (
-            <FlatList
-              data={teamMembers}
-              renderItem={renderItem}
-              keyExtractor={(item) => item.id}
-              contentContainerStyle={styles.flatListContent}
-            />
-          )}
-        </View>
-      )}
-      <Button
-        title="Adicionar Novo Membro"
-        onPress={() => router.push('/team/new')} // Navega para a tela de adicionar (fora das abas)
-        style={styles.addMemberButton}
-      />
+      <View style={styles.contentWrapper}>
+        <Text style={styles.title}>Nossa Equipe</Text>
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#007bff" />
+            <Text style={styles.loadingText}>Carregando...</Text>
+          </View>
+        ) : (
+          <View style={styles.listContainer}>
+            {Array.isArray(teamMembers) && teamMembers.length === 0 ? (
+              <Text style={styles.emptyMessage}>Nenhum membro da equipe encontrado.</Text>
+            ) : (
+              <FlatList
+                data={teamMembers}
+                renderItem={renderItem}
+                keyExtractor={(item, index) =>
+                  item && typeof item === 'object' && item.id !== undefined && item.id !== null
+                    ? String(item.id)
+                    : `invalid-${index}`
+                }
+                contentContainerStyle={styles.flatListContent}
+              />
+            )}
+          </View>
+        )}
+      </View>
+
+      <View style={styles.bottomButtonContainer}>
+        <TouchableOpacity
+          style={styles.addMemberButton}
+          onPress={() => router.push('/team/new')}
+        >
+          <Text style={{ color: '#fff', fontWeight: 'bold', textAlign: 'center' }}>Adicionar Novo Membro</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.assignButton}
+          onPress={() => router.push('/team/assign')}
+        >
+          <Text style={{ color: '#343a40', fontWeight: 'bold', textAlign: 'center' }}>Atribuir Projetos/Tarefas</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -81,10 +105,14 @@ function TeamMembersListScreen() {
 const styles = StyleSheet.create({
   screenContainer: {
     flex: 1,
-    padding: 20,
     backgroundColor: '#f8f9fa',
-    alignItems: 'center',
+    paddingHorizontal: 20,
     paddingTop: 20,
+    justifyContent: 'space-between',
+  },
+  contentWrapper: {
+    flex: 1,
+    width: '100%',
   },
   title: {
     fontSize: 28,
@@ -123,11 +151,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#6c757d',
   },
-  addMemberButton: {
-    backgroundColor: '#28a745',
-    marginTop: 20,
-    width: '100%',
-  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -143,6 +166,32 @@ const styles = StyleSheet.create({
     color: '#6c757d',
     textAlign: 'center',
     marginTop: 20,
+  },
+  bottomButtonContainer: {
+    width: '100%',
+    alignItems: 'center',
+    paddingVertical: 10,
+    marginBottom: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    flexWrap: 'wrap',
+    paddingBottom: 20,
+  },
+  addMemberButton: {
+    backgroundColor: '#28a745',
+    flex: 1,
+    marginHorizontal: 5,
+    minWidth: 150,
+    padding: 12,
+    borderRadius: 8,
+  },
+  assignButton: {
+    backgroundColor: '#ffc107',
+    flex: 1,
+    marginHorizontal: 5,
+    minWidth: 150,
+    padding: 12,
+    borderRadius: 8,
   },
 });
 

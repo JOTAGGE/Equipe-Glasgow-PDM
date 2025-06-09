@@ -20,21 +20,21 @@ export default function TabLayout() {
         name="index" // Rota: app/tabs/index.jsx
         options={{
           title: 'Home',
-          tabBarIcon: ({ color }) => <FontAwesome size={28} name="home" color={color} />,
+          tabBarIcon: ({ color }: { color: string }) => <FontAwesome size={28} name="home" color={color} />,
         }}
       />
       <Tabs.Screen
         name="team/index" // <--- CORREÇÃO CRÍTICA: O nome da rota da aba é "team/index" para corresponder ao arquivo app/tabs/team/index.jsx
         options={{
           title: 'Equipe',
-          tabBarIcon: ({ color }) => <FontAwesome size={28} name="group" color={color} />,
+          tabBarIcon: ({ color }: { color: string }) => <FontAwesome size={28} name="group" color={color} />,
         }}
       />
       <Tabs.Screen
         name="about" // Rota: app/tabs/about.jsx
         options={{
           title: 'Sobre',
-          tabBarIcon: ({ color }) => <FontAwesome size={28} name="info-circle" color={color} />,
+          tabBarIcon: ({ color }: { color: string }) => <FontAwesome size={28} name="info-circle" color={color} />,
         }}
       />
     </Tabs>

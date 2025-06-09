@@ -1,64 +1,66 @@
 // services/teamMemberApi.js
 import axios from 'axios';
+import Constants from 'expo-constants';
 
-const mockTeamMembers = [
-  { id: '1', name: 'Alice Smith', role: 'Desenvolvedora Frontend', email: 'alice.s@example.com', description: 'Responsável por desenvolver interfaces de usuário web e móveis, garantindo responsividade e usabilidade.' },
-  { id: '2', name: 'Bob Johnson', role: 'Desenvolvedor Backend', email: 'bob.j@example.com', description: 'Cria e mantém a lógica de servidor, APIs e bancos de dados para sustentar as aplicações.' },
-  { id: '3', name: 'Charlie Brown', role: 'Designer UX/UI', email: 'charlie.b@example.com', description: 'Foca na experiência do usuário e na criação de interfaces visuais intuitivas e esteticamente agradáveis.' },
-];
+const API_BASE_URL = Constants.manifest?.extra?.apiBaseUrl || 'https://crispy-pancake-rqr64x56wwjhp5w-3000.app.github.dev/';
 
-const teamMemberApi = {
+console.log("FRONTEND DEBUG - [teamMemberApi] Módulo carregado. API_BASE_URL configurada:", API_BASE_URL);
+
+const teamMemberApiInstance = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+export const teamMemberApi = {
   getAll: async () => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({ data: [...mockTeamMembers] });
-      }, 500);
-    });
+    try {
+      const response = await teamMemberApiInstance.get('/team-members');
+      return response.data;
+    } catch (error) {
+      console.error("FRONTEND DEBUG - [teamMemberApi] ERRO em getAll:", error.message);
+      throw error;
+    }
   },
+
   getById: async (id) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const member = mockTeamMembers.find((m) => m.id === id);
-        resolve({ data: member ? { ...member } : null });
-      }, 300);
-    });
+    try {
+      const response = await teamMemberApiInstance.get(`/team-members/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error(`FRONTEND DEBUG - [teamMemberApi] ERRO em getById(${id}):`, error.message);
+      throw error;
+    }
   },
-  create: async (member) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const newMember = { ...member, id: Date.now().toString() };
-        mockTeamMembers.push(newMember);
-        resolve({ data: newMember });
-      }, 700);
-    });
+
+  create: async (memberData) => {
+    try {
+      const response = await teamMemberApiInstance.post('/team-members', memberData);
+      return response.data;
+    } catch (error) {
+      console.error("FRONTEND DEBUG - [teamMemberApi] ERRO em create:", error.message);
+      throw error;
+    }
   },
-  update: async (updatedMember) => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const index = mockTeamMembers.findIndex((m) => m.id === updatedMember.id);
-        if (index !== -1) {
-          mockTeamMembers[index] = { ...updatedMember };
-          resolve({ data: updatedMember });
-        } else {
-          reject({ response: { data: 'Membro da equipe não encontrado.' } });
-        }
-      }, 600);
-    });
+
+  update: async (memberData) => {
+    try {
+      const response = await teamMemberApiInstance.put(`/team-members/${memberData.id}`, memberData);
+      return response.data;
+    } catch (error) {
+      console.error("FRONTEND DEBUG - [teamMemberApi] ERRO em update:", error.message);
+      throw error;
+    }
   },
+
   delete: async (id) => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const initialLength = mockTeamMembers.length;
-        const filtered = mockTeamMembers.filter((m) => m.id !== id);
-        if (filtered.length < initialLength) {
-          mockTeamMembers.splice(0, mockTeamMembers.length, ...filtered);
-          resolve({ data: { success: true } });
-        } else {
-          reject({ response: { data: 'Membro da equipe não encontrado.' } });
-        }
-      }, 400);
-    });
+    try {
+      await teamMemberApiInstance.delete(`/team-members/${id}`);
+      return true;
+    } catch (error) {
+      console.error(`FRONTEND DEBUG - [teamMemberApi] ERRO em delete(${id}):`, error.message);
+      throw error;
+    }
   },
 };
-
-export { teamMemberApi };

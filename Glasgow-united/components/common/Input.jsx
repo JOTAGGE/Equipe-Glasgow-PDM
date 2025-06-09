@@ -2,53 +2,71 @@
 import React from 'react';
 import { View, Text, TextInput, StyleSheet } from 'react-native';
 
-const Input = ({ label, value, onChangeText, placeholder, keyboardType = 'default', editable = true, rightAccessory }) => (
-  <View style={styles.inputGroup}>
-    <Text style={styles.inputLabel}>{label}</Text>
-    <View style={styles.inputFieldContainer}>
+const Input = ({ label, value, onChangeText, placeholder, editable, keyboardType, multiline, style, rightAccessory, error, erro }) => {
+  return (
+    <View style={styles.container}>
+      {label && <Text style={styles.label}>{label}</Text>}
       <TextInput
-        style={styles.inputField}
+        style={[styles.inputField, multiline && styles.multilineInputField, style]}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        keyboardType={keyboardType}
         editable={editable}
-        placeholderTextColor="#adb5bd"
+        keyboardType={keyboardType}
+        multiline={multiline}
+        placeholderTextColor="#6c757d"
       />
-      {rightAccessory && <View style={styles.rightAccessoryContainer}>{rightAccessory}</View>}
+      {error && <Text style={styles.error}>{error}</Text>}
+      {rightAccessory && (
+        <View style={styles.rightAccessoryContainer}>
+          {rightAccessory}
+        </View>
+      )}
+      <View>
+        {/* Comentário */}
+      </View>
     </View>
-  </View>
-);
+  );
+};
 
 const styles = StyleSheet.create({
-  inputGroup: {
-    marginBottom: 15,
+  container: {
     width: '100%',
+    marginBottom: 15,
   },
-  inputLabel: {
+  label: {
     fontSize: 16,
     color: '#343a40',
     marginBottom: 5,
     fontWeight: '500',
   },
-  inputFieldContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '100%',
+  inputWrapper: {
+    flexDirection: 'row', // Organiza o campo de texto e o acessório na mesma linha
+    alignItems: 'center', // Alinha verticalmente no centro
     backgroundColor: '#fff',
     borderColor: '#ced4da',
     borderWidth: 1,
     borderRadius: 8,
-    paddingHorizontal: 15,
+    overflow: 'hidden', // Importante para que o conteúdo não vaze
   },
   inputField: {
-    flexGrow: 1,
-    height: 44,
+    flex: 1, // Faz o TextInput ocupar todo o espaço disponível
+    padding: 10,
     fontSize: 16,
     color: '#495057',
   },
+  multilineInputField: {
+    minHeight: 100,
+    textAlignVertical: 'top', // Para que o texto comece no topo em multiline
+  },
   rightAccessoryContainer: {
-    marginLeft: 10,
+    // Não precisa de flex: 1 aqui, o acessório terá seu tamanho natural
+    paddingRight: 10, // Espaçamento à direita do acessório
+  },
+  error: {
+    color: '#dc3545',
+    fontSize: 14,
+    marginTop: 5,
   },
 });
 

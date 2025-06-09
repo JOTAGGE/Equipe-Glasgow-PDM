@@ -1,177 +1,232 @@
 // app/team/assign.jsx
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Modal } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { FontAwesome } from '@expo/vector-icons';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Picker } from '@react-native-picker/picker'; 
 
 import Button from '../../components/common/Button';
-import useProjectStore from '../../store/projectStore';
-import useTaskStore from '../../store/taskStore';
 import useTeamStore from '../../store/teamStore';
+import { teamMemberApi } from '../../services/teamMemberApi';
 import { projectApi } from '../../services/projectApi';
 import { taskApi } from '../../services/taskApi';
-import { teamMemberApi } from '../../services/teamMemberApi';
 
-
-function AssignProjectTaskModal() {
+function AssignScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
-  const { memberId, memberProjects: initialMemberProjectsJson, memberTasks: initialMemberTasksJson } = useLocalSearchParams();
-
-  const initialMemberProjects = initialMemberProjectsJson ? JSON.parse(initialMemberProjectsJson) : [];
-  const initialMemberTasks = initialMemberTasksJson ? JSON.parse(initialMemberTasksJson) : [];
-
-  const { projects, setProjects } = useProjectStore();
-  const { tasks, setTasks } = useTaskStore();
-  const { updateTeamMember } = useTeamStore();
-
+  const { teamMembers, setTeamMembers, updateTeamMember } = useTeamStore(); 
+  
+  const [selectedMemberId, setSelectedMemberId] = useState('');
+  const [availableProjects, setAvailableProjects] = useState([]);
+  const [selectedProjects, setSelectedProjects] = useState([]); 
+  const [availableTasks, setAvailableTasks] = useState([]);
+  const [selectedTasks, setSelectedTasks] = useState([]); 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [selectedProjects, setSelectedProjects] = useState(new Set(initialMemberProjects));
-  const [selectedTasks, setSelectedTasks] = useState(new Set(initialMemberTasks));
 
   const showMessage = useCallback((title, text) => {
     Alert.alert(title, text);
   }, []);
 
   useEffect(() => {
-    const fetchAllData = async () => {
+    const fetchData = async () => {
       setLoading(true);
       try {
-        const projectsResponse = await projectApi.getAll();
-        setProjects(projectsResponse.data);
-        const tasksResponse = await taskApi.getAll();
-        setTasks(tasksResponse.data);
+        console.log("FRONTEND DEBUG - [AssignScreen] Iniciando busca de dados para atribuição...");
+        
+        // Chamadas paralelas para buscar todos os dados
+        // Agora todos os `getAll()` nos serviços retornam `response.data` diretamente
+        const [membersData, projectsData, tasksData] = await Promise.all([
+          teamMemberApi.getAll(), 
+          projectApi.getAll(),    
+          taskApi.getAll(),       
+        ]);
+
+        const filteredMembers = membersData && Array.isArray(membersData) 
+                                ? membersData.filter(m => m && m.id) : [];
+        setTeamMembers(filteredMembers); 
+
+        const filteredProjects = projectsData && Array.isArray(projectsData) 
+                                 ? projectsData.filter(p => p && p.id) : [];
+        setAvailableProjects(filteredProjects);
+
+        const filteredTasks = tasksData && Array.isArray(tasksData) 
+                              ? tasksData.filter(t => t && t.id) : [];
+        setAvailableTasks(filteredTasks);
+
+        if (filteredMembers.length > 0) {
+          setSelectedMemberId(filteredMembers[0].id);
+        }
+
+        console.log("FRONTEND DEBUG - [AssignScreen] Dados carregados com sucesso: Membros", filteredMembers.length, "Projetos", filteredProjects.length, "Tarefas", filteredTasks.length);
+
       } catch (error) {
-        console.error('Erro ao carregar projetos/tarefas:', error);
-        showMessage('Erro', 'Não foi possível carregar projetos e tarefas.');
+        console.error('FRONTEND DEBUG - [AssignScreen] Erro ao carregar dados (catch block):', error.message || error);
+        if (error.response) {
+            console.error("FRONTEND DEBUG - [AssignScreen] Detalhes do erro de resposta da API (status/data):", error.response.status, JSON.stringify(error.response.data, null, 2));
+        } else if (error.request) {
+            console.error("FRONTEND DEBUG - [AssignScreen] Erro de requisição (não houve resposta do servidor). VERIFIQUE API_BASE_URL e a conexão de rede do Codespace/celular.", error.request);
+        } else {
+            console.error("FRONTEND DEBUG - [AssignScreen] Erro de configuração Axios/JS:", error.message);
+        }
+        showMessage('Erro ao Carregar', `Não foi possível carregar os dados para atribuição. Verifique a conexão com o backend: ${error.message || 'Erro desconhecido'}`);
       } finally {
         setLoading(false);
       }
     };
-    fetchAllData();
-  }, [setProjects, setTasks, showMessage]);
 
-  const toggleSelection = (item, type) => {
-    if (type === 'project') {
-      setSelectedProjects(prev => {
-        const newSet = new Set(prev);
-        if (newSet.has(item.id)) {
-          newSet.delete(item.id);
-        } else {
-          newSet.add(item.id);
-        }
-        return newSet;
-      });
-    } else if (type === 'task') {
-      setSelectedTasks(prev => {
-        const newSet = new Set(prev);
-        if (newSet.has(item.id)) {
-          newSet.delete(item.id);
-        } else {
-          newSet.add(item.id);
-        }
-        return newSet;
-      });
+    fetchData();
+  }, [setTeamMembers, showMessage]);
+
+  useEffect(() => {
+    if (selectedMemberId && teamMembers.length > 0) {
+      const member = teamMembers.find(m => m.id === selectedMemberId);
+      if (member) {
+        setSelectedProjects(member.associatedProjects || []);
+        setSelectedTasks(member.associatedTasks || []);
+        console.log(`FRONTEND DEBUG - [AssignScreen] Membro selecionado: ${member.name}. Projetos associados: ${member.associatedProjects?.length || 0}, Tarefas associadas: ${member.associatedTasks?.length || 0}`);
+      }
+    } else {
+      setSelectedProjects([]);
+      setSelectedTasks([]);
+    }
+  }, [selectedMemberId, teamMembers]);
+
+  const toggleSelection = (list, setList, itemId) => {
+    if (list.includes(itemId)) {
+      setList(list.filter(id => id !== itemId));
+    } else {
+      setList([...list, itemId]);
     }
   };
 
-  const handleSaveAssociations = async () => {
+  const handleAssign = async () => {
     setSaving(true);
-    try {
-      const memberResponse = await teamMemberApi.getById(memberId);
-      let currentMember = memberResponse.data;
+    if (!selectedMemberId) {
+      showMessage('Atenção', 'Por favor, selecione um membro da equipe.');
+      setSaving(false);
+      return;
+    }
 
-      if (!currentMember) {
-        showMessage('Erro', 'Membro não encontrado para associação.');
+    try {
+      const memberToUpdate = teamMembers.find(m => m.id === selectedMemberId);
+      if (!memberToUpdate) {
+        showMessage('Erro', 'Membro selecionado não encontrado no estado local.');
         setSaving(false);
         return;
       }
 
-      currentMember = {
-        ...currentMember,
-        associatedProjects: Array.from(selectedProjects),
-        associatedTasks: Array.from(selectedTasks),
+      const updatedMemberData = {
+        ...memberToUpdate,
+        associatedProjects: selectedProjects,
+        associatedTasks: selectedTasks,
       };
 
-      const response = await teamMemberApi.update(currentMember);
-      const updated = response.data;
-      updateTeamMember(updated);
-      showMessage('Sucesso', 'Associações salvas com sucesso!');
-      router.back();
+      console.log("FRONTEND DEBUG - [AssignScreen] Enviando atualização para membro:", updatedMemberData);
+      const updatedMember = await teamMemberApi.update(updatedMemberData);
+      updateTeamMember(updatedMember); 
+
+      showMessage('Sucesso', 'Projetos e tarefas atribuídos com sucesso!');
+      router.back(); 
     } catch (error) {
-      console.error('Erro ao salvar associações:', error);
-      showMessage('Erro', `Não foi possível salvar associações: ${error.message || error.response?.data}`);
+      console.error('FRONTEND DEBUG - [AssignScreen] Erro ao atribuir (catch block):', error.message || error);
+      if (error.response) {
+          console.error("FRONTEND DEBUG - [AssignScreen] Detalhes do erro de resposta da API (status/data):", error.response.status, JSON.stringify(error.response.data, null, 2));
+      } else if (error.request) {
+          console.error("FRONTEND DEBUG - [AssignScreen] Erro de requisição (não houve resposta do servidor). VERIFIQUE API_BASE_URL e a conexão de rede do Codespace/celular.", error.request);
+      } else {
+          console.error("FRONTEND DEBUG - [AssignScreen] Erro de configuração Axios/JS:", error.message);
+      }
+      showMessage('Erro', `Não foi possível atribuir projetos/tarefas: ${error.message || 'Erro desconhecido'}`);
     } finally {
       setSaving(false);
     }
   };
 
-  const renderItem = (item, type) => {
-    const isSelected = (type === 'project' ? selectedProjects : selectedTasks).has(item.id);
+  if (loading) {
     return (
-      <TouchableOpacity
-        key={item.id}
-        style={[styles.itemContainer, isSelected && styles.selectedItem]}
-        onPress={() => toggleSelection(item, type)}
-      >
-        <Text style={styles.itemName}>{item.name}</Text>
-        <FontAwesome
-          name={isSelected ? 'check-circle' : 'circle-o'}
-          size={20}
-          color={isSelected ? '#28a745' : '#6c757d'}
-        />
-      </TouchableOpacity>
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#007bff" />
+        <Text style={styles.loadingText}>Carregando dados...</Text>
+      </View>
     );
-  };
+  }
 
   return (
-    <View style={[styles.modalContainer, { paddingTop: insets.top + 20 }]}>
-      <View style={styles.header}>
-        <Text style={styles.modalTitle}>Associar Projetos/Tarefas</Text>
-      </View>
+    <View style={styles.screenContainer}>
+      <ScrollView contentContainerStyle={styles.scrollViewContent}>
+        <Text style={styles.title}>Atribuir Projetos e Tarefas</Text>
 
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007bff" />
-          <Text style={styles.loadingText}>Carregando...</Text>
+        <View style={styles.pickerContainer}>
+          <Text style={styles.label}>Selecionar Membro:</Text>
+          <Picker
+            selectedValue={selectedMemberId}
+            onValueChange={(itemValue) => setSelectedMemberId(itemValue)}
+            style={styles.picker}
+          >
+            {teamMembers.length === 0 ? (
+                <Picker.Item label="Nenhum membro disponível" value="" />
+            ) : (
+                teamMembers.map((member) => (
+                    <Picker.Item key={member.id} label={member.name} value={member.id} />
+                ))
+            )}
+          </Picker>
         </View>
-      ) : (
-        <ScrollView style={styles.scrollViewContent}> 
-          <Text style={styles.sectionHeading}>Projetos Disponíveis:</Text>
-          {projects.length === 0 ? (
-            <Text style={styles.emptyMessage}>Nenhum projeto disponível.</Text>
-          ) : (
-            <View>
-              {projects.map(project => renderItem(project, 'project'))}
-            </View>
-          )}
 
-          <Text style={styles.sectionHeading}>Tarefas Disponíveis:</Text>
-          {tasks.length === 0 ? (
-            <Text style={styles.emptyMessage}>Nenhuma tarefa disponível.</Text>
-          ) : (
-            <View>
-              {tasks.map(task => renderItem(task, 'task'))}
-            </View>
-          )}
-        </ScrollView>
-      )}
+        <Text style={styles.sectionTitle}>Projetos:</Text>
+        {availableProjects.length === 0 ? (
+          <Text style={styles.noItemsMessage}>Nenhum projeto disponível.</Text>
+        ) : (
+          availableProjects.map((project) => (
+            <TouchableOpacity
+              key={project.id}
+              style={[
+                styles.checkboxItem,
+                selectedProjects.includes(project.id) && styles.checkboxItemSelected,
+              ]}
+              onPress={() => toggleSelection(selectedProjects, setSelectedProjects, project.id)}
+            >
+              <Text style={styles.checkboxText}>{project.name}</Text>
+            </TouchableOpacity>
+          ))
+        )}
 
-      <View style={styles.buttonContainer}>
-        <Button
-          title={saving ? 'Salvando...' : 'Salvar Associações'}
-          onPress={handleSaveAssociations}
-          style={styles.saveButton}
-          disabled={saving}
-        />
-      </View>
+        <Text style={styles.sectionTitle}>Tarefas:</Text>
+        {availableTasks.length === 0 ? (
+          <Text style={styles.noItemsMessage}>Nenhuma tarefa disponível.</Text>
+        ) : (
+          availableTasks.map((task) => (
+            <TouchableOpacity
+              key={task.id}
+              style={[
+                styles.checkboxItem,
+                selectedTasks.includes(task.id) && styles.checkboxItemSelected,
+              ]}
+              onPress={() => toggleSelection(selectedTasks, setSelectedTasks, task.id)}
+            >
+              <Text style={styles.checkboxText}>{task.name}</Text>
+            </TouchableOpacity>
+          ))
+        )}
 
+        <View style={styles.buttonContainer}>
+          <Button
+            title="Atribuir"
+            onPress={handleAssign}
+            style={styles.actionButton}
+            disabled={saving || !selectedMemberId}
+          />
+          <Button
+            title="Cancelar"
+            onPress={() => router.back()}
+            style={styles.cancelButton}
+            disabled={saving}
+          />
+        </View>
+      </ScrollView>
       {saving && (
         <View style={styles.savingOverlay}>
           <ActivityIndicator size="large" color="#007bff" />
-          <Text style={styles.loadingText}>Salvando...</Text>
+          <Text style={styles.loadingText}>Atribuindo...</Text>
         </View>
       )}
     </View>
@@ -179,78 +234,102 @@ function AssignProjectTaskModal() {
 }
 
 const styles = StyleSheet.create({
-  modalContainer: {
+  screenContainer: {
     flex: 1,
+    paddingHorizontal: 20,
     backgroundColor: '#f8f9fa',
   },
-  header: {
-    flexDirection: 'row',
+  scrollViewContent: {
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingBottom: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
-    marginBottom: 20,
-    backgroundColor: '#fff',
-    paddingHorizontal: 20,
+    paddingBottom: 20,
   },
-  modalTitle: {
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#343a40',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  pickerContainer: {
+    width: '100%',
+    marginBottom: 20,
+    borderColor: '#ced4da',
+    borderWidth: 1,
+    borderRadius: 8,
+    backgroundColor: '#fff',
+    overflow: 'hidden',
+  },
+  label: {
+    fontSize: 16,
+    color: '#343a40',
+    marginBottom: 5,
+    fontWeight: '500',
+    paddingHorizontal: 10,
+    paddingTop: 10,
+  },
+  picker: {
+    width: '100%',
+    color: '#495057',
+  },
+  sectionTitle: {
     fontSize: 22,
     fontWeight: 'bold',
     color: '#343a40',
-    textAlign: 'center',
-    flex: 1,
-  },
-  scrollViewContent: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
-  sectionHeading: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#343a40',
-    marginTop: 15,
+    marginTop: 20,
     marginBottom: 10,
+    width: '100%',
+    textAlign: 'left',
   },
-  itemContainer: {
+  checkboxItem: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: '#fff',
     padding: 15,
     borderRadius: 8,
-    marginBottom: 10,
+    marginBottom: 8,
     borderWidth: 1,
-    borderColor: '#ced4da',
+    borderColor: '#e9ecef',
+    width: '100%',
   },
-  selectedItem: {
+  checkboxItemSelected: {
+    backgroundColor: '#e0f7fa',
     borderColor: '#007bff',
-    backgroundColor: '#e6f7ff',
+    borderWidth: 2,
   },
-  itemName: {
+  checkboxText: {
     fontSize: 16,
-    color: '#343a40',
+    color: '#495057',
   },
-  emptyMessage: {
+  noItemsMessage: {
     fontSize: 16,
     color: '#6c757d',
     textAlign: 'center',
-    marginTop: 20,
+    marginTop: 10,
+    width: '100%',
   },
   buttonContainer: {
-    padding: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#e9ecef',
-    backgroundColor: '#fff',
-  },
-  saveButton: {
-    backgroundColor: '#28a745',
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 20,
+    marginBottom: 30,
     width: '100%',
+    gap: 10,
+  },
+  actionButton: {
+    backgroundColor: '#007bff',
+    flex: 1,
+    marginHorizontal: 5,
+  },
+  cancelButton: {
+    backgroundColor: '#6c757d',
+    flex: 1,
+    marginHorizontal: 5,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#f8f9fa',
   },
   loadingText: {
     marginTop: 10,
@@ -266,8 +345,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.8)',
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 1000,
+    zIndex: 999,
   },
 });
 
-export default AssignProjectTaskModal;
+export default AssignScreen;

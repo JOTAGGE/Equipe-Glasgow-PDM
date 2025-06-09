@@ -1,19 +1,39 @@
 // services/projectApi.js
 import axios from 'axios';
+import Constants from 'expo-constants';
 
-const mockProjects = [
-  { id: 'p1', name: 'App de Gerenciamento', description: 'Desenvolvimento de um aplicativo de gerenciamento de tarefas e equipe.', assignedTeamMembers: ['1', '2'] },
-  { id: 'p2', name: 'Redesign do Site', description: 'Reestruturação completa da interface do usuário do site principal.', assignedTeamMembers: ['3'] },
-];
+const API_BASE_URL = Constants.manifest?.extra?.apiBaseUrl || 'https://crispy-pancake-rqr64x56wwjhp5w-3000.app.github.dev/';
 
-const projectApi = {
+console.log("FRONTEND DEBUG - [projectApi] Módulo carregado. API_BASE_URL configurada:", API_BASE_URL);
+
+const projectApiInstance = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+export const projectApi = {
   getAll: async () => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({ data: mockProjects });
-      }, 400);
-    });
+    try {
+      console.log("FRONTEND DEBUG - [projectApi] Chamando GET para /projects. Axios BaseURL:", projectApiInstance.defaults.baseURL);
+      const response = await projectApiInstance.get('/projects'); 
+      console.log("FRONTEND DEBUG - [projectApi] Resposta de getAll() - Status:", response.status, "Dados recebidos:", response.data);
+      return response.data; 
+    } catch (error) {
+      console.error("FRONTEND DEBUG - [projectApi] Erro em getAll:", error.message, "Status do erro (se houver):", error.response?.status, "Dados do erro (se houver):", error.response?.data, "Objeto de requisição:", error.request);
+      throw error;
+    }
+  },
+  getById: async (id) => {
+    try {
+      console.log(`FRONTEND DEBUG - [projectApi] Chamando GET para /projects/${id}. Axios BaseURL:`, projectApiInstance.defaults.baseURL);
+      const response = await projectApiInstance.get(`/projects/${id}`); 
+      console.log(`FRONTEND DEBUG - [projectApi] Resposta de getById(${id}) - Status:`, response.status, "Dados recebidos:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error(`FRONTEND DEBUG - [projectApi] Erro em getById(${id}):`, error.message, "Status do erro (se houver):", error.response?.status, "Dados do erro (se houver):", error.response?.data, "Objeto de requisição:", error.request);
+      throw error;
+    }
   },
 };
-
-export { projectApi };
