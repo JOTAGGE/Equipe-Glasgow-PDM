@@ -1,7 +1,7 @@
 {
   "expo": {
     "extra": {
-      "apiBaseUrl": "https://equipe-glasgow-pdm.onrender.com/",
+      "apiBaseUrl": "https://equipe-glasgow-pdm.onrender.com",
       "eas": {
         "projectId": "0d40c54f-3445-48fd-8221-61762954d5f1"
       }

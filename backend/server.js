@@ -1,5 +1,3 @@
-import React from 'react';
-import { TouchableOpacity, Text } from 'react-native';
 import express from 'express';
 
 const app = express();
