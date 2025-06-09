@@ -1,10 +1,16 @@
 import React from 'react';
 import { TouchableOpacity, Text } from 'react-native';
+import express from 'express';
 
-export default function Button({ title, onPress, style, ...props }) {
-  return (
-    <TouchableOpacity onPress={onPress} style={style} {...props}>
-      <Text>{title}</Text>
-    </TouchableOpacity>
-  );
-}
+const app = express();
+
+app.use(express.json());
+
+app.get('/', (req, res) => {
+  res.send('Backend rodando!');
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Servidor backend rodando na porta ${PORT}`);
+});
