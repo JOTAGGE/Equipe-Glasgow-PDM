@@ -129,6 +129,7 @@ function MemberDetailScreen() {
   };
 
   const handleDelete = async () => {
+    console.log("Botão de exclusão pressionado");
     Alert.alert(
       "Confirmar Exclusão",
       `Tem certeza que deseja excluir ${member?.name || 'este membro'}?`,
@@ -140,7 +141,7 @@ function MemberDetailScreen() {
         {
           text: "Excluir",
           onPress: async () => {
-            console.log("FRONTEND DEBUG - [MemberDetail] Tentando excluir membro com ID:", id);
+            console.log("Usuário confirmou exclusão");
             try {
               await teamMemberApi.delete(id); 
               deleteTeamMember(id); 
@@ -164,6 +165,17 @@ function MemberDetailScreen() {
       ],
       { cancelable: true }
     );
+  };
+
+  const handleDeleteDireto = async () => {
+    try {
+      await teamMemberApi.delete(id);
+      deleteTeamMember(id);
+      showMessage('Sucesso', 'Membro excluído com sucesso!');
+      router.replace('/tabs/team');
+    } catch (error) {
+      showMessage('Erro', `Não foi possível excluir: ${error.message || 'Erro desconhecido'}`);
+    }
   };
 
   if (loading) {
@@ -260,7 +272,13 @@ function MemberDetailScreen() {
           ) : (
             <>
               <Button title="Editar Membro" onPress={() => setEditing(true)} style={styles.actionButton} />
-              <Button title="Excluir Membro" onPress={handleDelete} style={styles.deleteButton} />
+              <Button
+                title="Excluir Membro"
+                onPress={async () => {
+                  await handleDelete();
+                }}
+                style={styles.deleteButton}
+              />
               <Button title="Voltar" onPress={() => router.back()} style={styles.backButton} />
             </>
           )}
