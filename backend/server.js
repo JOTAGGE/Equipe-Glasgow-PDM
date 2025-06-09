@@ -1,18 +1,14 @@
 // backend/server.js
 const express = require('express');
 const cors = require('cors');
-const { v4: uuidv4 } = require('uuid'); // Para gerar IDs únicos
+const { v4: uuidv4 } = require('uuid');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middlewares
 app.use(cors()); 
 app.use(express.json()); 
 
-// --- Dados em Memória (simulando um banco de dados simples) ---
-// Estes dados são persistidos apenas enquanto o servidor estiver rodando.
-// Ao reiniciar o servidor, os dados são resetados para os valores abaixo.
 let teamMembers = [
     { id: uuidv4(), name: 'Alice Smith', role: 'Desenvolvedora Frontend', email: 'alice.s@example.com', description: 'Especialista em React Native.', associatedProjects: [], associatedTasks: [] },
     { id: uuidv4(), name: 'Bob Johnson', role: 'Desenvolvedor Backend', email: 'bob.j@example.com', description: 'Mestre em Node.js e bancos de dados.', associatedProjects: [], associatedTasks: [] },
@@ -47,7 +43,7 @@ app.get('/', (req, res) => {
 
 app.get('/team-members', (req, res) => {
     console.log("BACKEND DEBUG: Requisição GET /team-members recebida.");
-    console.log("BACKEND DEBUG: Enviando todos os membros:", teamMembers); // Log dos membros sendo enviados
+    console.log("BACKEND DEBUG: Enviando todos os membros (nomes):", teamMembers.map(m => m.name));
     res.json(teamMembers);
 });
 
@@ -103,12 +99,23 @@ app.put('/team-members/:id', (req, res) => {
 
 app.delete('/team-members/:id', (req, res) => {
     const { id } = req.params;
+    console.log(`BACKEND DEBUG: Requisição DELETE /team-members/${id} recebida.`);
     const initialLength = teamMembers.length;
-    teamMembers = teamMembers.filter(m => m.id !== id);
+    
+    teamMembers = teamMembers.filter(m => {
+        const isMatch = m.id === id;
+        if (isMatch) {
+            console.log(`BACKEND DEBUG: Membro com ID ${id} ENCONTRADO para exclusão.`);
+        }
+        return !isMatch;
+    });
+
     if (teamMembers.length < initialLength) {
-        console.log(`BACKEND DEBUG: Membro com ID ${id} deletado.`);
+        console.log(`BACKEND DEBUG: Membro com ID ${id} deletado com SUCESSO.`);
+        console.log(`BACKEND DEBUG: Lista de membros após exclusão (nomes):`, teamMembers.map(m => m.name));
         res.status(204).send();
     } else {
+        console.warn(`BACKEND DEBUG: Tentativa de exclusão: Membro com ID ${id} NÃO encontrado.`);
         res.status(404).json({ message: 'Membro da equipe não encontrado.' });
     }
 });

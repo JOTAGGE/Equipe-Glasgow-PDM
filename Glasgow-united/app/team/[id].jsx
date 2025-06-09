@@ -1,3 +1,4 @@
+// app/team/[id].jsx
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -15,6 +16,10 @@ function MemberDetailScreen() {
   const { id } = useLocalSearchParams();
   const { teamMembers, updateTeamMember, deleteTeamMember } = useTeamStore();
   const insets = useSafeAreaInsets();
+
+  const apiKey = "AIzaSyA-g3mc6Sx-ViqxV9JXdeEAnXIJkeFUFdY"; 
+  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+      
 
   const [member, setMember] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -129,7 +134,6 @@ function MemberDetailScreen() {
   };
 
   const handleDelete = async () => {
-    console.log("Botão de exclusão pressionado");
     Alert.alert(
       "Confirmar Exclusão",
       `Tem certeza que deseja excluir ${member?.name || 'este membro'}?`,
@@ -141,7 +145,7 @@ function MemberDetailScreen() {
         {
           text: "Excluir",
           onPress: async () => {
-            console.log("Usuário confirmou exclusão");
+            console.log("FRONTEND DEBUG - [MemberDetail] Tentando excluir membro com ID:", id);
             try {
               await teamMemberApi.delete(id); 
               deleteTeamMember(id); 
@@ -165,17 +169,6 @@ function MemberDetailScreen() {
       ],
       { cancelable: true }
     );
-  };
-
-  const handleDeleteDireto = async () => {
-    try {
-      await teamMemberApi.delete(id);
-      deleteTeamMember(id);
-      showMessage('Sucesso', 'Membro excluído com sucesso!');
-      router.replace('/tabs/team');
-    } catch (error) {
-      showMessage('Erro', `Não foi possível excluir: ${error.message || 'Erro desconhecido'}`);
-    }
   };
 
   if (loading) {
@@ -272,13 +265,7 @@ function MemberDetailScreen() {
           ) : (
             <>
               <Button title="Editar Membro" onPress={() => setEditing(true)} style={styles.actionButton} />
-              <Button
-                title="Excluir Membro"
-                onPress={async () => {
-                  await handleDelete();
-                }}
-                style={styles.deleteButton}
-              />
+              <Button title="Excluir Membro" onPress={handleDelete} style={styles.deleteButton} />
               <Button title="Voltar" onPress={() => router.back()} style={styles.backButton} />
             </>
           )}
