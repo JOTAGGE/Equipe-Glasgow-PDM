@@ -1,4 +1,3 @@
-// app/tabs/about.jsx
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router'; // Importar useRouter
@@ -35,7 +34,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f9fa',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 80, // Mantido para espaçamento geral
+    paddingTop: 80,
   },
   title: {
     fontSize: 28,

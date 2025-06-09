@@ -1,4 +1,3 @@
-// app/team/[id].jsx
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -15,22 +14,20 @@ function MemberDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const { teamMembers, updateTeamMember, deleteTeamMember } = useTeamStore();
-  const insets = useSafeAreaInsets(); // Obtém os insets da área segura para ajustar o layout
+  const insets = useSafeAreaInsets();
 
   const [member, setMember] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [projects, setProjects] = useState([]); // Estado para armazenar todos os projetos
-  const [tasks, setTasks] = useState([]);     // Estado para armazenar todas as tarefas
+  const [projects, setProjects] = useState([]);
+  const [tasks, setTasks] = useState([]);
   const [deleted, setDeleted] = useState(false);
 
-  // Callback para exibir mensagens de alerta ao usuário
   const showMessage = useCallback((title, text) => {
     Alert.alert(title, text);
   }, []);
 
-  // Efeito para buscar os detalhes do membro e dados relacionados (projetos/tarefas)
   useEffect(() => {
     const fetchMemberData = async () => {
       if (!id) {
@@ -41,15 +38,13 @@ function MemberDetailScreen() {
       }
 
       console.log("FRONTEND DEBUG - [MemberDetail] ID recebido na rota:", id);
-      setLoading(true); // Inicia o estado de carregamento
+      setLoading(true);
       try {
-        // Tenta encontrar o membro no store global primeiro (mais rápido)
         const foundMember = teamMembers.find(m => m.id === id); 
         if (foundMember) {
           setMember(foundMember);
           console.log("FRONTEND DEBUG - [MemberDetail] Membro encontrado no store:", foundMember);
         } else {
-          // Se não estiver no store, busca na API
           console.log("FRONTEND DEBUG - [MemberDetail] Membro não encontrado no store, buscando na API com ID:", id);
           const apiMember = await teamMemberApi.getById(id);
           setMember(apiMember);
@@ -58,18 +53,16 @@ function MemberDetailScreen() {
       } catch (error) {
         console.error('FRONTEND DEBUG - [MemberDetail] Erro ao buscar detalhes do membro (catch block):', error.message || error);
         
-        // Trata erros de rede ou 404 (membro não encontrado/deletado) com redirecionamento imediato
         if (error.response && error.response.status === 404) {
           showMessage('Membro Não Encontrado', 'O membro que você tentou acessar não existe mais ou foi excluído.');
-          router.replace('/tabs/team'); // Redireciona para a lista de membros
-          return; // Importante para parar a execução após o redirecionamento
+          router.replace('/tabs/team'); 
+          return;
         } else if (error.message === "Network Error" || error.code === "ERR_NETWORK") {
           showMessage('Erro de Conexão', 'Não foi possível conectar ao servidor. Verifique sua conexão e a URL do backend.');
-          router.replace('/tabs/team'); // Redireciona para a lista de membros
-          return; // Importante para parar a execução após o redirecionamento
+          router.replace('/tabs/team'); 
+          return;
         }
 
-        // Logs detalhados para outros tipos de erro, caso não sejam 404 ou Network Error
         if (error.response) {
             console.error("FRONTEND DEBUG - [MemberDetail] Detalhes do erro de resposta da API (status/data):", error.response.status, JSON.stringify(error.response.data, null, 2));
         } else if (error.request) {
@@ -79,13 +72,12 @@ function MemberDetailScreen() {
         }
         
         showMessage('Erro na API', `Não foi possível carregar os detalhes do membro: ${error.message || 'Erro desconhecido'}`);
-        setMember(null); // Limpa o membro em caso de erro grave
+        setMember(null); 
       } finally {
-        setLoading(false); // Finaliza o estado de carregamento
+        setLoading(false);
       }
     };
 
-    // Função para buscar todos os projetos e tarefas do backend para exibição dos nomes completos
     const fetchAllRelatedData = async () => {
       try {
         console.log("FRONTEND DEBUG - [MemberDetail] Buscando todos os projetos e tarefas para display...");
@@ -93,47 +85,44 @@ function MemberDetailScreen() {
           projectApi.getAll(),
           taskApi.getAll()
         ]);
-        setProjects(allProjects || []); // Garante que é um array, mesmo se a API retornar null/undefined
-        setTasks(allTasks || []);     // Garante que é um array
+        setProjects(allProjects || []);
+        setTasks(allTasks || []);
       } catch (e) {
         console.error("FRONTEND DEBUG - [MemberDetail] Erro ao buscar projetos/tarefas:", e.message);
-        setProjects([]); // Limpa as listas em caso de erro
+        setProjects([]);
         setTasks([]);
       }
     };
 
-    if (deleted) return; // Não busca se já foi deletado
+    if (deleted) return;
 
-    fetchMemberData();      // Chama a função principal para buscar os dados do membro
-    fetchAllRelatedData();  // Chama a função para buscar dados relacionados
-  }, [id, teamMembers, showMessage, router, deleted]); // Dependências do useEffect
+    fetchMemberData();
+    fetchAllRelatedData();
+  }, [id, teamMembers, showMessage, router, deleted]);
 
-  // Lógica para atualizar os dados do membro no backend
   const handleUpdate = async () => {
-    setSaving(true); // Ativa o estado de salvamento
+    setSaving(true);
     console.log("FRONTEND DEBUG - [MemberDetail] Tentando atualizar membro. Dados enviados:", member);
     try {
-      if (!member.name || !member.role || !member.email) {
+      if (!member.name || !member.name || !member.email) {
         showMessage('Validação', 'Nome, função e email são obrigatórios.');
         setSaving(false);
         return;
       }
       
-      const updated = await teamMemberApi.update(member); // Chama a API para atualizar
-      updateTeamMember(updated); // Atualiza o membro no store global do Zustand
+      const updated = await teamMemberApi.update(member);
+      updateTeamMember(updated); 
       showMessage('Sucesso', 'Membro atualizado com sucesso!');
-      setEditing(false); // Sai do modo de edição
+      setEditing(false); 
     } catch (error) {
       console.error('FRONTEND DEBUG - [MemberDetail] Erro ao atualizar membro:', error);
       showMessage('Erro', `Não foi possível atualizar: ${error.message || 'Erro desconhecido'}`);
     } finally {
-      setSaving(false); // Desativa o estado de salvamento
+      setSaving(false);
     }
   };
 
-  // Lógica para deletar um membro
   const handleDelete = async () => {
-    // Exibe um alerta de confirmação antes de prosseguir com a exclusão
     Alert.alert(
       "Confirmar Exclusão",
       `Tem certeza que deseja excluir ${member?.name || 'este membro'}?`,
@@ -148,10 +137,9 @@ function MemberDetailScreen() {
             try {
               await teamMemberApi.delete(id);
               deleteTeamMember(id);
-              setDeleted(true); // <-- Marque como deletado
+              setDeleted(true);
               showMessage('Sucesso', 'Membro excluído com sucesso!');
               router.replace('/tabs/team');
-              // Não faz mais nada após redirecionar
             } catch (error) {
               console.error('FRONTEND DEBUG - [MemberDetail] Erro ao excluir membro:', error);
               showMessage('Erro', `Não foi possível excluir: ${error.message || 'Erro desconhecido'}`);
@@ -163,7 +151,6 @@ function MemberDetailScreen() {
     );
   };
 
-  // Renderiza um indicador de carregamento enquanto os dados estão sendo buscados
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -173,7 +160,6 @@ function MemberDetailScreen() {
     );
   }
 
-  // Renderiza uma mensagem de erro se o membro não for encontrado após o carregamento
   if (!member) {
     return (
       <View style={styles.errorContainer}>
@@ -183,13 +169,10 @@ function MemberDetailScreen() {
     );
   }
 
-  // Se o membro foi deletado, não renderiza nada (pode redirecionar para outra tela no futuro)
   if (deleted) return null;
 
-  // Renderiza a tela de detalhes/edição do membro
   return (
     <View style={styles.screenContainer}>
-      {/* ScrollView para permitir rolagem do conteúdo. Padding inferior ajustado com insets para não cobrir a barra de navegação. */}
       <ScrollView contentContainerStyle={[styles.scrollViewContent, { paddingBottom: insets.bottom + 80 }]}> 
         <Text style={styles.title}>{editing ? 'Editar Membro' : 'Detalhes do Membro'}</Text>
 
@@ -227,46 +210,41 @@ function MemberDetailScreen() {
           keyboardType="email-address"
         />
         
-        {/* Exibe os projetos associados, buscando o nome completo se disponível */}
         {member.associatedProjects && member.associatedProjects.length > 0 && (
           <View style={styles.associationsContainer}>
             <Text style={styles.associationsTitle}>Projetos Associados:</Text>
             {member.associatedProjects.map((projectId, index) => {
-              // Tenta encontrar o projeto completo pela ID
               const project = projects.find(p => String(p.id) === String(projectId));
               return (
                 <Text key={index} style={styles.associationItem}>
-                  - {project ? project.name : `ID: ${projectId}`} {/* Exibe o nome ou o ID */}
+                  - {project ? project.name : `ID: ${projectId}`}
                 </Text>
               );
             })}
           </View>
         )}
         
-        {/* Exibe as tarefas associadas, buscando o nome completo se disponível */}
         {member.associatedTasks && member.associatedTasks.length > 0 && (
           <View style={styles.associationsContainer}>
             <Text style={styles.associationsTitle}>Tarefas Associadas:</Text>
             {member.associatedTasks.map((taskId, index) => {
-              // Tenta encontrar a tarefa completa pela ID
               const task = tasks.find(t => String(t.id) === String(taskId));
               return (
                 <Text key={index} style={styles.associationItem}>
-                  - {task ? task.name : `ID: ${taskId}`} {/* Exibe o nome ou o ID */}
+                  - {task ? task.name : `ID: ${taskId}`}
                 </Text>
               );
             })}
           </View>
         )}
 
-        {/* Contêiner para os botões de ação (Salvar, Cancelar, Editar, Excluir, Voltar) */}
         <View style={styles.buttonContainer}>
-          {editing ? ( // Botões exibidos no modo de edição
+          {editing ? (
             <>
               <Button title="Salvar Alterações" onPress={handleUpdate} style={styles.actionButton} disabled={saving} />
               <Button title="Cancelar Edição" onPress={() => setEditing(false)} style={styles.cancelButton} disabled={saving} />
             </>
-          ) : ( // Botões exibidos no modo de visualização
+          ) : (
             <>
               <Button title="Editar Membro" onPress={() => setEditing(true)} style={styles.actionButton} />
               <Button title="Excluir Membro" onPress={handleDelete} style={styles.deleteButton} />
@@ -287,7 +265,6 @@ const styles = StyleSheet.create({
   },
   scrollViewContent: {
     alignItems: 'center',
-    // O paddingBottom dinâmico é aplicado diretamente no componente ScrollView, não aqui.
   },
   title: {
     fontSize: 28,
@@ -342,15 +319,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     marginTop: 20,
-    marginBottom: 30, // Espaçamento extra abaixo dos botões dentro da ScrollView
+    marginBottom: 30,
     width: '100%',
-    gap: 10, // Espaçamento entre os botões
-    flexWrap: 'wrap', // Permite que os botões quebrem a linha em telas menores
+    gap: 10,
+    flexWrap: 'wrap', 
   },
   actionButton: {
     backgroundColor: '#007bff',
-    flex: 1, // Permite que o botão ocupe o espaço disponível
-    minWidth: '45%', // Garante um tamanho mínimo para o botão
+    flex: 1,
+    minWidth: '45%', 
   },
   cancelButton: {
     backgroundColor: '#6c757d',
@@ -361,7 +338,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#dc3545',
     flex: 1,
     minWidth: '45%',
-    marginTop: 10, // Adiciona espaçamento superior para botões na nova linha
+    marginTop: 10, 
   },
   backButton: {
     backgroundColor: '#17a2b8',

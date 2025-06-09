@@ -107,6 +107,8 @@ Abra o arquivo app.json e adicione/atualize a seção extra com o URL do seu bac
 
 Inicie o aplicativo Expo:
 
+Para fazer login no expo pelo terminal: npx expo login
+Para o projeto rodar no celular: npx expo start --go --tunnel
 npm start # Inicie o servidor de desenvolvimento do Expo
 
 Isso abrirá uma nova aba no seu navegador ou um menu no terminal. Você pode escanear o QR code com o aplicativo Expo Go no seu celular ou abrir a versão web.

@@ -1,4 +1,3 @@
-// app/team/assign.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -32,8 +31,6 @@ function AssignScreen() {
       try {
         console.log("FRONTEND DEBUG - [AssignScreen] Iniciando busca de dados para atribuição...");
         
-        // Chamadas paralelas para buscar todos os dados
-        // Agora todos os `getAll()` nos serviços retornam `response.data` diretamente
         const [membersData, projectsData, tasksData] = await Promise.all([
           teamMemberApi.getAll(), 
           projectApi.getAll(),    

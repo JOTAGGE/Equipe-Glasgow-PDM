@@ -1,4 +1,3 @@
-// store/teamStore.js
 import { create } from 'zustand';
 
 const useTeamStore = create((set) => ({

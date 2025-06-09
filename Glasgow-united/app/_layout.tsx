@@ -1,4 +1,3 @@
-// app/_layout.tsx
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View, StyleSheet } from 'react-native';
@@ -12,42 +11,42 @@ export default function RootLayout() {
       <StatusBar style="auto" />
       <View style={{ flex: 1, paddingTop: insets.top }}>
         <Stack
-          screenOptions={{ headerShown: false }} // Oculta o cabeçalho padrão para o grupo de abas/rotas no nível superior
+          screenOptions={{ headerShown: false }} 
         >
-          {/* A rota "index" (app/index.jsx) será o ponto de entrada e fará o redirecionamento */}
+          
           <Stack.Screen name="index" options={{ headerShown: false }} />
 
-          {/* Rotas que aparecerão por cima das abas (com cabeçalho e botão de voltar automático) */}
+          
           <Stack.Screen
             name="team/new"
             options={{
               title: 'Adicionar Membro',
-              headerShown: true, // Garante que o cabeçalho com botão de voltar esteja visível
+              headerShown: true, 
               headerStyle: { backgroundColor: '#007bff' },
               headerTintColor: '#fff',
               headerTitleStyle: { fontWeight: 'bold' },
-              presentation: 'modal', // Continua como modal
+              presentation: 'modal', 
             }}
           />
           <Stack.Screen
             name="team/[id]"
             options={{
               title: 'Detalhes do Membro',
-              headerShown: true, // Garante que o cabeçalho com botão de voltar esteja visível
+              headerShown: true, 
               headerStyle: { backgroundColor: '#007bff' },
               headerTintColor: '#fff',
               headerTitleStyle: { fontWeight: 'bold' },
             }}
           />
           <Stack.Screen
-            name="team/assign" // Rota para o modal de associar projetos/tarefas
+            name="team/assign" 
             options={{
               title: 'Associar',
-              headerShown: true, // Garante cabeçalho com botão de voltar
+              headerShown: true, 
               headerStyle: { backgroundColor: '#007bff' },
               headerTintColor: '#fff',
               headerTitleStyle: { fontWeight: 'bold' },
-              presentation: 'modal', // Continua sendo um modal
+              presentation: 'modal', 
             }}
           />
         </Stack>

@@ -1,9 +1,8 @@
-// app/team/new.jsx
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 
-import Input from '../../components/common/Input'; // Garante que o Input corrigido seja usado
+import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
 import useTeamStore from '../../store/teamStore';
 import { teamMemberApi } from '../../services/teamMemberApi';
@@ -211,7 +210,7 @@ const styles = StyleSheet.create({
     marginBottom: 5,
     fontWeight: '500',
   },
-  inputField: { // Estilo básico para campos de entrada de texto
+  inputField: { 
     backgroundColor: '#fff',
     borderColor: '#ced4da',
     borderWidth: 1,
@@ -275,9 +274,9 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 6,
-    marginLeft: 10, // Espaçamento à esquerda para separá-lo do input
-    flexGrow: 0, // Não deve crescer para ocupar espaço
-    alignSelf: 'center', // Alinha ao centro verticalmente dentro do Input
+    marginLeft: 10, 
+    flexGrow: 0, 
+    alignSelf: 'center', 
   },
   generateDescriptionButtonText: {
     fontSize: 14,

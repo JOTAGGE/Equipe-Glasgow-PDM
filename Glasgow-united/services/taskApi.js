@@ -1,8 +1,7 @@
-// services/taskApi.js
 import axios from 'axios';
 import Constants from 'expo-constants';
 
-const API_BASE_URL = Constants.manifest?.extra?.apiBaseUrl || 'https://crispy-pancake-rqr64x56wwjhp5w-3000.app.github.dev/';
+const API_BASE_URL = Constants.manifest?.extra?.apiBaseUrl || 'https://equipe-glasgow-pdm.onrender.com';
 
 console.log("FRONTEND DEBUG - [taskApi] Módulo carregado. API_BASE_URL configurada:", API_BASE_URL);
 
