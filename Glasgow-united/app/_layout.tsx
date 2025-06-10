@@ -15,7 +15,7 @@ export default function RootLayout() {
           screenOptions={{ headerShown: false }} // Oculta o cabeçalho padrão para o grupo de abas/rotas no nível superior
         >
           {/* A rota "index" (app/index.jsx) será o ponto de entrada e fará o redirecionamento */}
-          <Stack.Screen name="index" options={{ headerShown: false }} />
+          <Stack.Screen name="app/index" options={{ headerShown: false }} />
 
           {/* Rotas que aparecerão por cima das abas (com cabeçalho e botão de voltar automático) */}
           <Stack.Screen

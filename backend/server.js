@@ -1,10 +1,9 @@
-// backend/server.js
 const express = require('express');
 const cors = require('cors');
 const { v4: uuidv4 } = require('uuid'); 
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8081;
 
 // Middlewares
 app.use(cors()); 
@@ -104,15 +103,25 @@ app.put('/team-members/:id', (req, res) => {
 app.delete('/team-members/:id', (req, res) => {
     const { id } = req.params;
     const memberIndex = teamMembers.findIndex(m => m.id === id);
-    if (memberIndex !== -1) {
-        const deletedMember = teamMembers[memberIndex];
-        teamMembers.splice(memberIndex, 1);
-        console.log(`BACKEND DEBUG: Membro com ID ${id} deletado.`, deletedMember);
-        res.status(200).json({ message: 'Membro da equipe deletado com sucesso.' });
-    } else {
-        console.warn(`BACKEND DEBUG: Tentativa de exclusão: Membro com ID ${id} não encontrado.`);
-        res.status(404).json({ message: 'Membro da equipe não encontrado.' });
+
+    if (memberIndex === -1) {
+        console.warn(`BACKEND DEBUG: Delete failed - Member ID ${id} not found`);
+        return res.status(404).json({
+            success: false,
+            message: 'Member not found'
+        });
     }
+
+    // Remove member and store deleted data
+    const deletedMember = teamMembers.splice(memberIndex, 1)[0];
+    
+    console.log(`BACKEND DEBUG: Successfully deleted member:`, deletedMember);
+    
+    return res.status(200).json({
+        success: true,
+        message: 'Member successfully deleted',
+        deletedMember
+    });
 });
 
 app.get('/projects', (req, res) => {
@@ -149,8 +158,5 @@ app.get('/tasks/:id', (req, res) => {
     }
 });
 
-app.listen(PORT, () => {
-    console.log(`Servidor backend rodando na porta ${PORT}`);
-    console.log(`Acesse: http://localhost:${PORT}`);
-    console.log(`Para testar endpoints de API no navegador, tente: http://localhost:${PORT}/team-members`);
-});
+// Exporte o app e os dados para teste
+module.exports = { app, teamMembers };

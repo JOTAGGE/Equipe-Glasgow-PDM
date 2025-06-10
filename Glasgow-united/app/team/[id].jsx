@@ -130,38 +130,36 @@ function MemberDetailScreen() {
       setSaving(false); // Desativa o estado de salvamento
     }
   };
-
-  // Lógica para deletar um membro
-  const handleDelete = useCallback(() => {
-    if (!member) return;
+  
+  // Lógica para excluir o membro
+  const handleDelete = async () => {
     Alert.alert(
       "Confirmar Exclusão",
-      `Tem certeza que deseja excluir ${member.name || 'este membro'}?`,
+      "Tem certeza que deseja excluir este membro?",
       [
         {
           text: "Cancelar",
-          style: "cancel",
+          style: "cancel"
         },
         {
           text: "Excluir",
           style: "destructive",
           onPress: async () => {
             try {
-              await teamMemberApi.delete(id);
-              deleteTeamMember(id);
+              await teamMemberApi.delete(member.id);
+              deleteTeamMember(member.id); // Atualiza o store
               setDeleted(true);
               showMessage('Sucesso', 'Membro excluído com sucesso!');
-              router.replace('/tabs/team');
+              router.replace('/tabs/team'); // Redireciona para a lista
             } catch (error) {
-              console.error('FRONTEND DEBUG - [MemberDetail] Erro ao excluir membro:', error);
+              console.error('FRONTEND DEBUG - [MemberDetail] Erro ao excluir:', error);
               showMessage('Erro', `Não foi possível excluir: ${error.message || 'Erro desconhecido'}`);
             }
-          },
-        },
-      ],
-      { cancelable: true }
+          }
+        }
+      ]
     );
-  }, [member, id, deleteTeamMember, showMessage, router]);
+  };
 
   // Renderiza um indicador de carregamento enquanto os dados estão sendo buscados
   if (loading) {
@@ -259,23 +257,40 @@ function MemberDetailScreen() {
           </View>
         )}
 
-        {/* Contêiner para os botões de ação (Salvar, Cancelar, Editar, Excluir, Voltar) */}
+        {/* Substitua o ButtonContainer existente por este */}
         <View style={styles.buttonContainer}>
-          {editing ? ( // Botões exibidos no modo de edição
+          {editing ? (
             <>
-              <Button title="Salvar Alterações" onPress={handleUpdate} style={styles.actionButton} disabled={saving} />
-              <Button title="Cancelar Edição" onPress={() => setEditing(false)} style={styles.cancelButton} disabled={saving} />
-            </>
-          ) : ( // Botões exibidos no modo de visualização
-            <>
-              <Button title="Editar Membro" onPress={() => setEditing(true)} style={styles.actionButton} />
-              <Button
-                title="Excluir Membro"
-                onPress={member ? handleDelete : undefined}
-                style={styles.deleteButton}
-                disabled={!member}
+              <Button 
+                title="Salvar Alterações" 
+                onPress={handleUpdate} 
+                style={styles.actionButton} 
+                disabled={saving} 
               />
-              <Button title="Voltar" onPress={() => router.back()} style={styles.backButton} />
+              <Button 
+                title="Cancelar Edição" 
+                onPress={() => setEditing(false)} 
+                style={styles.cancelButton} 
+                disabled={saving} 
+              />
+            </>
+          ) : (
+            <>
+              <Button 
+                title="Editar Membro" 
+                onPress={() => setEditing(true)} 
+                style={styles.actionButton} 
+              />
+              <Button 
+                title="Excluir Membro" 
+                onPress={handleDelete} 
+                style={styles.deleteButton} 
+              />
+              <Button 
+                title="Voltar" 
+                onPress={() => router.replace('/tabs/team')} 
+                style={styles.backButton} 
+              />
             </>
           )}
         </View>
@@ -347,15 +362,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     marginTop: 20,
-    marginBottom: 30, // Espaçamento extra abaixo dos botões dentro da ScrollView
+    marginBottom: 30,
     width: '100%',
-    gap: 10, // Espaçamento entre os botões
-    flexWrap: 'wrap', // Permite que os botões quebrem a linha em telas menores
+    gap: 10,
+    flexWrap: 'wrap',
   },
   actionButton: {
     backgroundColor: '#007bff',
-    flex: 1, // Permite que o botão ocupe o espaço disponível
-    minWidth: '45%', // Garante um tamanho mínimo para o botão
+    flex: 1,
+    minWidth: '45%',
   },
   cancelButton: {
     backgroundColor: '#6c757d',
@@ -366,13 +381,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#dc3545',
     flex: 1,
     minWidth: '45%',
-    marginTop: 10, // Adiciona espaçamento superior para botões na nova linha
   },
   backButton: {
     backgroundColor: '#17a2b8',
     flex: 1,
     minWidth: '45%',
-    marginTop: 10,
   },
   loadingContainer: {
     flex: 1,
