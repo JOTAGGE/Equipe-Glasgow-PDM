@@ -12,7 +12,10 @@
     "updates": {
       "url": "https://u.expo.dev/09530ffb-82dc-48b8-a1ee-c1fa691859ce"
     },
-    "android": {},
-    "ios": {}
+    "android": {
+      "package": "com.gabriel.glasgowunited"
+    },
+    "ios": {},
+    "owner": "jose_gabriel_2025"
   }
 }
