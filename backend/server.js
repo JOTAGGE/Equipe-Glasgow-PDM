@@ -1,7 +1,7 @@
 // backend/server.js
 const express = require('express');
 const cors = require('cors');
-const { v4: uuidv4 } = require('uuid'); // Para gerar IDs únicos
+const { v4: uuidv4 } = require('uuid'); 
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -103,12 +103,14 @@ app.put('/team-members/:id', (req, res) => {
 
 app.delete('/team-members/:id', (req, res) => {
     const { id } = req.params;
-    const initialLength = teamMembers.length;
-    teamMembers = teamMembers.filter(m => m.id !== id);
-    if (teamMembers.length < initialLength) {
-        console.log(`BACKEND DEBUG: Membro com ID ${id} deletado.`);
-        res.status(204).send();
+    const memberIndex = teamMembers.findIndex(m => m.id === id);
+    if (memberIndex !== -1) {
+        const deletedMember = teamMembers[memberIndex];
+        teamMembers.splice(memberIndex, 1);
+        console.log(`BACKEND DEBUG: Membro com ID ${id} deletado.`, deletedMember);
+        res.status(200).json({ message: 'Membro da equipe deletado com sucesso.' });
     } else {
+        console.warn(`BACKEND DEBUG: Tentativa de exclusão: Membro com ID ${id} não encontrado.`);
         res.status(404).json({ message: 'Membro da equipe não encontrado.' });
     }
 });

@@ -132,11 +132,11 @@ function MemberDetailScreen() {
   };
 
   // Lógica para deletar um membro
-  const handleDelete = async () => {
-    // Exibe um alerta de confirmação antes de prosseguir com a exclusão
+  const handleDelete = useCallback(() => {
+    if (!member) return;
     Alert.alert(
       "Confirmar Exclusão",
-      `Tem certeza que deseja excluir ${member?.name || 'este membro'}?`,
+      `Tem certeza que deseja excluir ${member.name || 'este membro'}?`,
       [
         {
           text: "Cancelar",
@@ -144,14 +144,14 @@ function MemberDetailScreen() {
         },
         {
           text: "Excluir",
+          style: "destructive",
           onPress: async () => {
             try {
               await teamMemberApi.delete(id);
               deleteTeamMember(id);
-              setDeleted(true); // <-- Marque como deletado
+              setDeleted(true);
               showMessage('Sucesso', 'Membro excluído com sucesso!');
               router.replace('/tabs/team');
-              // Não faz mais nada após redirecionar
             } catch (error) {
               console.error('FRONTEND DEBUG - [MemberDetail] Erro ao excluir membro:', error);
               showMessage('Erro', `Não foi possível excluir: ${error.message || 'Erro desconhecido'}`);
@@ -161,7 +161,7 @@ function MemberDetailScreen() {
       ],
       { cancelable: true }
     );
-  };
+  }, [member, id, deleteTeamMember, showMessage, router]);
 
   // Renderiza um indicador de carregamento enquanto os dados estão sendo buscados
   if (loading) {
@@ -269,7 +269,12 @@ function MemberDetailScreen() {
           ) : ( // Botões exibidos no modo de visualização
             <>
               <Button title="Editar Membro" onPress={() => setEditing(true)} style={styles.actionButton} />
-              <Button title="Excluir Membro" onPress={handleDelete} style={styles.deleteButton} />
+              <Button
+                title="Excluir Membro"
+                onPress={member ? handleDelete : undefined}
+                style={styles.deleteButton}
+                disabled={!member}
+              />
               <Button title="Voltar" onPress={() => router.back()} style={styles.backButton} />
             </>
           )}

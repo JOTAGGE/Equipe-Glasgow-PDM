@@ -2,7 +2,7 @@
 import axios from 'axios';
 import Constants from 'expo-constants';
 
-const API_BASE_URL = Constants.manifest?.extra?.apiBaseUrl || 'https://crispy-pancake-rqr64x56wwjhp5w-3000.app.github.dev/';
+const API_BASE_URL = Constants.manifest?.extra?.apiBaseUrl || 'https://equipe-glasgow-pdm.onrender.com';
 
 console.log("FRONTEND DEBUG - [teamMemberApi] Módulo carregado. API_BASE_URL configurada:", API_BASE_URL);
 
@@ -56,10 +56,13 @@ export const teamMemberApi = {
 
   delete: async (id) => {
     try {
-      await teamMemberApiInstance.delete(`/team-members/${id}`);
-      return true;
+      const response = await teamMemberApiInstance.delete(`/team-members/${id}`);
+      if (response.status === 200) {
+        return true;
+      }
+      throw new Error('Failed to delete team member');
     } catch (error) {
-      console.error(`FRONTEND DEBUG - [teamMemberApi] ERRO em delete(${id}):`, error.message);
+      console.error(`FRONTEND DEBUG - [teamMemberApi] ERROR in delete(${id}):`, error.message);
       throw error;
     }
   },
