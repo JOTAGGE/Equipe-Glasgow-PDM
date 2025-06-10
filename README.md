@@ -37,8 +37,8 @@ Conecte membros a projetos e tarefas específicas, visualizando quem está traba
 
 Use o poder do Google Gemini API para gerar descrições criativas e concisas para as funções da sua equipe.
 
-🛠️ Tecnologias Usadas (O Motor por Trás)
-Frontend (Onde a Magia Acontece ✨)
+🛠️ Tecnologias Usadas
+Frontend:
 React Native: A fundação do nosso aplicativo móvel.
 
 Expo: O kit de ferramentas que torna o desenvolvimento e a publicação React Native mais fáceis.
@@ -53,7 +53,7 @@ react-native-safe-area-context: Para garantir que seu app se ajuste bem a qualqu
 
 @react-native-picker/picker: Para seleções de itens intuitivas.
 
-Backend (O Cérebro da Operação 🧠)
+Backend:
 Node.js com Express: Nosso servidor RESTful que gerencia todos os dados.
 
 Nota: Atualmente, os dados são armazenados em memória. Isso significa que, ao reiniciar o servidor, os dados voltam ao estado inicial. Para persistência real, seria necessário um banco de dados (ex: MongoDB, PostgreSQL).
@@ -61,7 +61,7 @@ Nota: Atualmente, os dados são armazenados em memória. Isso significa que, ao 
 Integração de Inteligência Artificial (O Toque de Gênio 🤖)
 Google Gemini API: Utilizado para a geração de descrições inteligentes para as funções dos membros da equipe.
 
-🏃‍♀️ Como Colocar o App Para Rodar (Passo a Passo)
+🏃‍♀️ Como Colocar o App Para Rodar
 Pré-requisitos
 Node.js (versão 18+ recomendada)
 
@@ -74,8 +74,8 @@ EAS CLI: npm install -g eas-cli (Essencial para publicação)
 Conexão com a internet (para dependências e API do Gemini)
 
 1. Clonar o Repositório
-git clone [LINK_DO_SEU_REPOSITORIO_AQUI]
-cd [NOME_DA_PASTA_DO_SEU_PROJETO]
+git clone https://github.com/JOTAGGE/Equipe-Glasgow-PDM.git
+cd Glasgow-united
 
 2. Configurar e Iniciar o Backend
 Abra um terminal e navegue até a pasta backend:
@@ -83,27 +83,6 @@ Abra um terminal e navegue até a pasta backend:
 cd backend
 npm install # Instale as dependências
 npm run dev # Inicie o servidor
-
-🚨 ATENÇÃO: Se você estiver usando um ambiente como Codespaces, anote o "Forwarded Address" (Endereço Encaminhado) da porta 3000. Este é o URL público do seu backend e será CRÍTICO para o frontend.
-
-3. Configurar e Iniciar o Frontend
-Abra um novo terminal e volte para a raiz do projeto principal (onde está o app.json):
-
-cd .. # Se você ainda estiver na pasta 'backend'
-npm install # Instale as dependências
-
-🔑 Configurar a URL do Backend:
-Abra o arquivo app.json e adicione/atualize a seção extra com o URL do seu backend. Este passo é VITAL para a conexão!
-
-{
-  "expo": {
-    // ... outras configurações ...
-    "extra": {
-      "apiBaseUrl": "SEU_URL_PUBLICO_DO_BACKEND_AQUI" 
-      // Exemplo: "https://crispy-pancake-rqr64x56wwjhp5w-3000.app.github.dev/"
-    }
-  }
-}
 
 Inicie o aplicativo Expo:
 
@@ -113,24 +92,28 @@ npm start # Inicie o servidor de desenvolvimento do Expo
 
 Isso abrirá uma nova aba no seu navegador ou um menu no terminal. Você pode escanear o QR code com o aplicativo Expo Go no seu celular ou abrir a versão web.
 
-🌐 Publicação do Aplicativo (EAS Update)
-Para publicar suas atualizações do app (depois de fazer commits das suas mudanças), utilize o EAS CLI.
+## Voce pode experimentar o app no seu celular ##
 
-Faça login no EAS:
+Baixe o app EXPO no seu celular
 
-eas login
+Em outro dispositivo bra o link: https://expo.dev/preview/update?message=readme%20atualizado&updateRuntimeVersion=1.0.0&createdAt=2025-06-10T01%3A32%3A57.584Z&slug=exp&projectId=09530ffb-82dc-48b8-a1ee-c1fa691859ce&group=f675c353-b639-41a6-bc5e-0bc515bc4c33
 
-Configure o projeto para EAS (se for a primeira vez):
+Escanei o QR Code (ele abrira o projeto no expo)
 
-eas build:configure
 
-Siga as instruções para gerar o eas.json.
 
-Publique suas atualizações:
 
-eas update
 
-Isso irá gerar uma nova "bundle" do seu código e assets e enviá-la para os servidores da Expo, tornando-a disponível para usuários do Expo Go.
+
+
+-----------------------------------------------------
+
+
+
+
+
+
+
 
 🧑‍💻 Integrantes da Equipe
 Gabriel
