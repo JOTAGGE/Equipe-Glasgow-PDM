@@ -1,6 +1,11 @@
 ✨ Aplicativo de Gerenciamento de Equipe 🚀
 Bem-vindo ao repositório do nosso aplicativo de gerenciamento de equipe, construído com React Native e Expo! Este projeto visa simplificar a organização e a colaboração, permitindo que você gerencie membros da equipe, projetos e tarefas de forma eficiente.
 
+D E T A L H E I M P O R T A N T E 
+
+Na descrição do projeto consta que as chamadas de api são mockadas, mas isso foi substituido por um back end feito com Node.js e Express. Salvos num servidor no https://equipe-glasgow-pdm.onrender.com
+
+
 🎯 Visão Geral do Projeto
 Este aplicativo é uma solução móvel completa para:
 
