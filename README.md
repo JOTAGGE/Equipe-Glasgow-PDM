@@ -9,8 +9,8 @@ Para rodar o aplicativo em seu ambiente de desenvolvimento:
 
 Clone o Repositório:
 
-git clone [LINK_DO_SEU_REPOSITORIO_GITHUB_AQUI]
-cd [NOME_DA_PASTA_DO_SEU_PROJETO]
+git clone [https://github.com/JOTAGGE/Equipe-Glasgow-PDM.git]
+cd Glasgow-united
 
 Instale as Dependências:
 
