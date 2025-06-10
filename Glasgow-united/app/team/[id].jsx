@@ -65,11 +65,11 @@ function MemberDetailScreen() {
         
         if (error.response && error.response.status === 404) {
           showMessage('Membro Não Encontrado', 'O membro que você tentou acessar não existe mais ou foi excluído.');
-          router.replace('/tabs/team'); 
+          router.replace('/docs/team'); // era /docs/team
           return; 
         } else if (error.message === "Network Error" || error.code === "ERR_NETWORK") {
-          showMessage('Erro de Conexão', 'Não foi possível conectar ao servidor. Verifique sua conexão e a URL do backend.');
-          router.replace('/tabs/team'); 
+          showMessage('Erro de Conexão', 'Não foi possível conectar ao servidor.');
+          router.replace('/docs/team'); // era /docs/team
           return; 
         }
 
@@ -151,7 +151,7 @@ function MemberDetailScreen() {
               showMessage('Sucesso', 'Membro excluído com sucesso!');
               setDeleted(true); 
               console.log("FRONTEND DEBUG - [MemberDetail] Membro excluído com sucesso, redirecionando...");
-              router.replace('/tabs/team'); 
+              router.replace('/docs/team'); // era /docs/team
             } catch (error) {
               console.error('FRONTEND DEBUG - [MemberDetail] Erro ao excluir membro (catch block):', error.message || error);
               if (error.response) {
