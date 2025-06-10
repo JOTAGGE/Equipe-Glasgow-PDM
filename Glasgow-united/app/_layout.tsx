@@ -12,12 +12,15 @@ export default function RootLayout() {
       <StatusBar style="auto" />
       <View style={{ flex: 1, paddingTop: insets.top }}>
         <Stack
-          screenOptions={{ headerShown: false }} // Oculta o cabeçalho padrão para o grupo de abas/rotas no nível superior
+          screenOptions={{ headerShown: false }}
         >
-          {/* A rota "index" (app/index.jsx) será o ponto de entrada e fará o redirecionamento */}
-          <Stack.Screen name="app/index" options={{ headerShown: false }} />
+          {/* Redireciona para a home através do index */}
+          <Stack.Screen name="home" options={{ headerShown: false }} />
+          
+          {/* Rotas das tabs */}
+          <Stack.Screen name="tabs" options={{ headerShown: false }} />
 
-          {/* Rotas que aparecerão por cima das abas (com cabeçalho e botão de voltar automático) */}
+          {/* Outras rotas continuam iguais */}
           <Stack.Screen
             name="team/new"
             options={{

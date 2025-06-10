@@ -35,8 +35,17 @@
       "typedRoutes": true
     },
     "extra": {
-      "apiBaseUrl": "https://equipe-glasgow-pdm.onrender.com"
+      "apiBaseUrl": "https://equipe-glasgow-pdm.onrender.com",
+      "router": {},
+      "eas": {
+        "projectId": "3a59eb88-7140-4b36-87ff-e8a033debd17"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/3a59eb88-7140-4b36-87ff-e8a033debd17"
     }
   }
 }
-

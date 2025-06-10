@@ -1,40 +1,42 @@
 // app/tabs/_layout.tsx
 import { Tabs } from 'expo-router';
-import React from 'react';
-import { FontAwesome } from '@expo/vector-icons';
-import { View, StyleSheet } from 'react-native'; // Adicionado View e StyleSheet para evitar possíveis erros de resolução
+import { Ionicons } from '@expo/vector-icons';
 
-export default function TabLayout() {
+export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerShown: true, // Cabeçalhos das abas visíveis
         tabBarActiveTintColor: '#007bff',
-        headerStyle: { backgroundColor: '#007bff' }, // Estilo global para cabeçalhos das abas
-        headerTintColor: '#fff',
-        headerTitleStyle: { fontWeight: 'bold' },
+        tabBarInactiveTintColor: '#6c757d',
       }}
-      initialRouteName="index" // Rota inicial DENTRO DAS ABAS é 'index' (app/tabs/index.jsx)
     >
       <Tabs.Screen
-        name="index" // Rota: app/tabs/index.jsx
+        name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color }: { color: string }) => <FontAwesome size={28} name="home" color={color} />,
+          tabBarIcon: ({ color, size }: { color: string, size: number }) => (
+            <Ionicons name="home" size={size} color={color} />
+          ),
         }}
       />
+      
       <Tabs.Screen
-        name="team/index" // <--- CORREÇÃO CRÍTICA: O nome da rota da aba é "team/index" para corresponder ao arquivo app/tabs/team/index.jsx
+        name="team"
         options={{
           title: 'Equipe',
-          tabBarIcon: ({ color }: { color: string }) => <FontAwesome size={28} name="group" color={color} />,
+          tabBarIcon: ({ color, size }: { color: string, size: number }) => (
+            <Ionicons name="people" size={size} color={color} />
+          ),
         }}
       />
+
       <Tabs.Screen
-        name="about" // Rota: app/tabs/about.jsx
+        name="about"
         options={{
           title: 'Sobre',
-          tabBarIcon: ({ color }: { color: string }) => <FontAwesome size={28} name="info-circle" color={color} />,
+          tabBarIcon: ({ color, size }: { color: string, size: number }) => (
+            <Ionicons name="information-circle" size={size} color={color} />
+          ),
         }}
       />
     </Tabs>

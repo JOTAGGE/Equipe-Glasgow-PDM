@@ -2,15 +2,15 @@
 Este é um aplicativo móvel simples para gerenciamento de equipe.
 
 👨‍💻 Integrante
-Gabriel
+José Gabriel Barros Dos santos
 
 🛠️ Como Iniciar o Projeto (Frontend)
 Para rodar o aplicativo em seu ambiente de desenvolvimento:
 
 Clone o Repositório:
 
-git clone [LINK_DO_SEU_REPOSITORIO_GITHUB_AQUI]
-cd [NOME_DA_PASTA_DO_SEU_PROJETO]
+git clone []
+cd []
 
 Instale as Dependências:
 
@@ -35,5 +35,7 @@ Acesse o Link e Escaneie o QR Code:
 
 Abra o link a seguir no seu navegador:
 https://expo.dev/preview/update?message=Glasgow%20United%20Project%20App&updateRuntimeVersion=1.0.0&createdAt=2025-06-10T01%3A23%3A54.072Z&slug=exp&projectId=09530ffb-82dc-48b8-a1ee-c1fa691859ce&group=6253b4c5-ced7-41b1-99ef-82c0beb61c3e
+
+!!! tenha paciecia com o servidor :)
 
 Ao abrir o link, você verá um QR Code. Use o aplicativo Expo Go no seu celular para escanear esse QR Code e o aplicativo será carregado.
